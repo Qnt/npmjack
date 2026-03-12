@@ -12,7 +12,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@base-ui/react": "^1.2.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
@@ -26,6 +25,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
     "ofetch": "^1.5.1",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.5.0",
