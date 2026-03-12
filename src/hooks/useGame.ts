@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-import { getRandomPackage } from '#/lib/random-package'
+import { usePackagePool } from '#/hooks/usePackagePool'
 import type { PackageInfo } from '#/lib/npm-registry'
 
 export type GameStatus = 'idle' | 'playing' | 'dealerTurn' | 'won' | 'lost' | 'bust' | 'dealerBust'
@@ -28,6 +28,8 @@ function bytesToMB(bytes: number): number {
 }
 
 export function useGame() {
+  const packagePoolQuery = usePackagePool()
+  
   const [gameState, setGameState] = useState<GameState>({
     targetMB: generateTargetMB(),
     dealerTargetMB: 0,
@@ -41,9 +43,15 @@ export function useGame() {
   const dealerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pendingDealerPackageRef = useRef<string | null>(null)
   const [dealerPackageName, setDealerPackageName] = useState<string | null>(null)
+  const usedPackageNamesRef = useRef<Set<string>>(new Set())
+
+  const isLoadingPool = packagePoolQuery.isLoading
+  const poolError = packagePoolQuery.error
+  const packagePool = packagePoolQuery.data ?? []
 
   const startGame = useCallback(() => {
     const targetMB = generateTargetMB()
+    usedPackageNamesRef.current = new Set()
     setGameState({
       targetMB,
       dealerTargetMB: generateDealerTargetMB(targetMB),
@@ -57,28 +65,28 @@ export function useGame() {
     setDealerPackageName(null)
   }, [])
 
-  const getAllDrawnNames = useCallback((): Set<string> => {
-    const names = new Set<string>()
-    gameState.playerPackages.forEach(p => names.add(p.name))
-    gameState.dealerPackages.forEach(p => names.add(p.name))
-    return names
-  }, [gameState.playerPackages, gameState.dealerPackages])
-
   const getNextPackage = useCallback((): string => {
-    const drawnNames = getAllDrawnNames()
-    let attempts = 0
-    const maxAttempts = 100
-
-    while (attempts < maxAttempts) {
-      const packageName = getRandomPackage()
-      if (!drawnNames.has(packageName)) {
-        return packageName
-      }
-      attempts++
+    if (packagePool.length === 0) {
+      return 'react'
     }
 
-    return getRandomPackage()
-  }, [getAllDrawnNames])
+    const availablePackages = packagePool.filter(
+      name => !usedPackageNamesRef.current.has(name)
+    )
+
+    if (availablePackages.length === 0) {
+      usedPackageNamesRef.current = new Set()
+      const randomIndex = Math.floor(Math.random() * packagePool.length)
+      const packageName = packagePool[randomIndex]!
+      usedPackageNamesRef.current.add(packageName)
+      return packageName
+    }
+
+    const randomIndex = Math.floor(Math.random() * availablePackages.length)
+    const packageName = availablePackages[randomIndex]!
+    usedPackageNamesRef.current.add(packageName)
+    return packageName
+  }, [packagePool])
 
   const playerHit = useCallback((packageInfo: PackageInfo) => {
     setGameState(prev => {
@@ -199,5 +207,8 @@ export function useGame() {
     getNextPackage,
     dealerPackageName,
     handleDealerPackageLoaded,
+    isLoadingPool,
+    poolError,
+    poolSize: packagePool.length,
   }
 }
