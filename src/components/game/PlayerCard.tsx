@@ -28,7 +28,6 @@ export function PlayerCard({
   const isPlayer = icon === 'user'
   const gap = targetMB - totalMB
   const isBust = gap < 0
-  const stateLabel = isDrawing ? 'Drawing' : isBust ? 'Busted' : packages.length === 0 ? 'Fresh hand' : 'Live hand'
   const footerCopy = isDrawing
     ? 'Pulling from the deck'
     : packages.length === 0
@@ -60,18 +59,6 @@ export function PlayerCard({
               {isPlayer ? 'Your stack' : 'House stack'}
             </div>
           </div>
-          <span
-            className={cn(
-              'ml-auto rounded-full border px-3 py-1 font-display text-[10px] uppercase',
-              isDrawing
-                ? 'border-primary/35 bg-primary/12 text-primary'
-                : isBust
-                  ? 'border-rose-400/20 bg-rose-500/10 text-rose-100'
-                  : 'border-white/10 bg-white/5 text-foreground/80'
-            )}
-          >
-            {stateLabel}
-          </span>
         </CardTitle>
       </CardHeader>
 

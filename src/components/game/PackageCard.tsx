@@ -4,7 +4,6 @@ import type { PackageInfo } from '#/lib/npm-registry'
 
 interface PackageCardProps {
   packageInfo: PackageInfo
-  variant?: 'dealer' | 'player'
 }
 
 type Tier = {
@@ -67,7 +66,7 @@ function pickTier(size: number | null): Tier {
   return TIERS[3]!
 }
 
-export function PackageCard({ packageInfo, variant = 'player' }: PackageCardProps) {
+export function PackageCard({ packageInfo }: PackageCardProps) {
   const tier = pickTier(packageInfo.unpackedSize)
   const label = packageInfo.name.replace(/^@/, '').replace(/\//g, ' · ')
 
@@ -77,8 +76,7 @@ export function PackageCard({ packageInfo, variant = 'player' }: PackageCardProp
         'relative flex aspect-[2/2.8] w-[9.5rem] shrink-0 flex-col rounded-[18px] border-[3px] border-black/85 bg-gradient-to-br p-3 transition-transform',
         tier.body,
         tier.shadow,
-        variant === 'dealer' ? 'rotate-[-1.5deg]' : 'rotate-[1.5deg]',
-        'hover:-translate-y-1 hover:rotate-0'
+        'hover:-translate-y-1'
       )}
     >
       <div

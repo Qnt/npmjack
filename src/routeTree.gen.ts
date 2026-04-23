@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as GameRouteImport } from './routes/game'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPackagesRouteImport } from './routes/api/packages'
 
+const GameRoute = GameRouteImport.update({
+  id: '/game',
+  path: '/game',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +31,43 @@ const ApiPackagesRoute = ApiPackagesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/api/packages': typeof ApiPackagesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/api/packages': typeof ApiPackagesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/game': typeof GameRoute
   '/api/packages': typeof ApiPackagesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/packages'
+  fullPaths: '/' | '/game' | '/api/packages'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/packages'
-  id: '__root__' | '/' | '/api/packages'
+  to: '/' | '/game' | '/api/packages'
+  id: '__root__' | '/' | '/game' | '/api/packages'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GameRoute: typeof GameRoute
   ApiPackagesRoute: typeof ApiPackagesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/game': {
+      id: '/game'
+      path: '/game'
+      fullPath: '/game'
+      preLoaderRoute: typeof GameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GameRoute: GameRoute,
   ApiPackagesRoute: ApiPackagesRoute,
 }
 export const routeTree = rootRouteImport
