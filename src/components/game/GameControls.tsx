@@ -67,7 +67,7 @@ export function GameControls({
       <PressButton
         onClick={onNewGame}
         shadowColor="#4a0f12"
-        className="bg-gradient-to-b from-rose-500 to-rose-700 px-5 py-2.5 text-[0.62rem] text-white"
+        className="bg-gradient-to-b from-rose-500 to-rose-700 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-white"
       >
         <Dice5 className="size-4" />
         Deal
@@ -78,22 +78,24 @@ export function GameControls({
   if (status === 'playing') {
     return (
       <div className="flex flex-col gap-2">
-        <PressButton
-          onClick={onStand}
-          disabled={isLoading || playerCardCount === 0}
-          shadowColor="#7a2a07"
-          className="bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2 text-[0.58rem] text-orange-950"
-        >
-          <Shield className="size-3.5" />
-          Stand
-        </PressButton>
+        {playerCardCount > 0 && (
+          <PressButton
+            onClick={onStand}
+            disabled={isLoading}
+            shadowColor="#7a2a07"
+            className="bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2 text-[0.72rem] sm:text-[0.82rem] text-orange-950"
+          >
+            <Shield className="size-3.5" />
+            Stand
+          </PressButton>
+        )}
         <PressButton
           onClick={onHit}
           disabled={isLoading}
           shadowColor="#4a0f12"
-          className="bg-gradient-to-b from-rose-500 to-rose-700 px-6 py-3 text-[0.68rem] text-white"
+          className="bg-gradient-to-b from-rose-500 to-rose-700 px-6 py-3 text-[0.82rem] sm:text-[0.92rem] text-white"
         >
-          {isLoading ? <Spinner className="size-4" /> : <Dice5 className="size-4" />}
+          {isLoading && <Spinner className="size-4" />}
           Hit
         </PressButton>
       </div>
@@ -105,7 +107,7 @@ export function GameControls({
       <PressButton
         onClick={onNewGame}
         shadowColor="#0a3b25"
-        className="bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2.5 text-[0.62rem] text-emerald-950"
+        className="bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-emerald-950"
       >
         <RefreshCw className="size-4" />
         New Round

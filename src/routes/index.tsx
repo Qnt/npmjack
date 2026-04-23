@@ -113,14 +113,14 @@ function IdleBoard({ onStart }: { onStart: () => void }) {
       <div className="z-10 mt-5 flex flex-col items-center gap-4 sm:mt-6">
         <div className="flex items-center gap-3">
           <div className="h-px w-16 bg-gradient-to-r from-transparent to-white/20" />
-          <span className="font-display text-[0.55rem] tracking-[0.28em] text-white/30">♠ ♥ ♦ ♣</span>
+          <span className="font-display text-[0.68rem] tracking-[0.28em] text-white/30">♠ ♥ ♦ ♣</span>
           <div className="h-px w-16 bg-gradient-to-l from-transparent to-white/20" />
         </div>
 
-        <p className="max-w-sm text-[0.82rem] leading-6 text-white/55">
+        <p className="max-w-sm text-[0.92rem] leading-6 text-white/55">
           Draw npm packages notorious for their legendary bloat.
           <br />
-          <span className="text-[0.72rem] text-white/35">Good luck not drowning in dependencies.</span>
+          <span className="text-[0.82rem] text-white/35">Good luck not drowning in dependencies.</span>
         </p>
 
         <div className="relative mt-1" style={{ paddingBottom: '6px' }}>
@@ -131,7 +131,7 @@ function IdleBoard({ onStart }: { onStart: () => void }) {
           <button
             onClick={onStart}
             type="button"
-            className="relative inline-flex items-center gap-3 rounded-[12px] border-[2.5px] border-black/80 bg-gradient-to-b from-rose-500 to-rose-700 px-12 py-4 font-display text-sm uppercase tracking-[0.24em] text-white transition-transform duration-[60ms] ease-linear active:translate-y-[5px]"
+            className="relative inline-flex items-center gap-3 rounded-[12px] border-[2.5px] border-black/80 bg-gradient-to-b from-rose-500 to-rose-700 px-12 py-4 font-display text-base sm:text-lg uppercase tracking-[0.24em] text-white transition-transform duration-[60ms] ease-linear active:translate-y-[5px]"
           >
             Deal
           </button>

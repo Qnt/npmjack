@@ -33,9 +33,9 @@ export function GameStatus({
         <Icon className="size-5" />
       </span>
       <div className="flex-1">
-        <div className="text-[0.6rem] tracking-[0.3em] opacity-80">round resolution</div>
-        <div className="mt-1 text-lg leading-none">{content.title}</div>
-        <div className="mt-1 text-[0.6rem] tracking-[0.15em] opacity-80 normal-case">
+        <div className="text-[0.72rem] tracking-[0.3em] opacity-80">round resolution</div>
+        <div className="mt-1 text-xl leading-none">{content.title}</div>
+        <div className="mt-1 text-[0.72rem] tracking-[0.15em] opacity-80 normal-case">
           {content.description}
         </div>
       </div>

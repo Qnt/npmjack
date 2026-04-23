@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { FeltOverlay } from '#/components/game/FeltOverlay'
 import { GameControls } from '#/components/game/GameControls'
@@ -75,7 +75,7 @@ function Game() {
 
           <div className="relative z-10 flex flex-1 flex-col">
             <PlayBoard
-              dealerDrawing={game.status === 'dealerTurn'}
+              dealerDrawing={isLoadingDealer}
               dealerPackages={game.dealerPackages}
               dealerTotalMB={game.dealerTotalMB}
               isLoadingPlayer={isLoadingPlayer}
@@ -192,7 +192,7 @@ function CenterBar({
             <span
               key={`d-${status}`}
               className={cn(
-                'animate-in fade-in-0 slide-in-from-top-1 duration-500 font-display text-[0.82rem] leading-none tabular-nums tracking-[0.04em]',
+                'animate-in fade-in-0 slide-in-from-top-1 duration-500 font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
                 dealerBust ? 'text-rose-300' : 'text-orange-200/90'
               )}
             >
@@ -202,7 +202,7 @@ function CenterBar({
           )}
         </div>
 
-        <span className="font-display text-[0.7rem] leading-none tabular-nums tracking-[0.12em] text-amber-300/70">
+        <span className="font-display text-[0.82rem] leading-none tabular-nums tracking-[0.12em] text-amber-300/70">
           {targetMB.toFixed(2)}
           <span className="ml-0.5 text-[0.55em] opacity-50">MB</span>
         </span>
@@ -211,7 +211,7 @@ function CenterBar({
           {showPlayer && (
             <span
               className={cn(
-                'animate-in fade-in-0 slide-in-from-bottom-1 duration-500 font-display text-[0.82rem] leading-none tabular-nums tracking-[0.04em]',
+                'animate-in fade-in-0 slide-in-from-bottom-1 duration-500 font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
                 playerBust ? 'text-rose-300' : 'text-sky-200/90'
               )}
             >
@@ -255,9 +255,8 @@ const CARD_W_REM = 9.5
 const MIN_PEEK_REM = 2.5
 const MAX_PEEK_REM = CARD_W_REM
 
-function peekRem(count: number): number {
+function peekRem(count: number, containerRem: number): number {
   if (count <= 1) return MAX_PEEK_REM
-  const containerRem = 40
   const needed = CARD_W_REM + (count - 1) * MIN_PEEK_REM
   if (needed <= containerRem) {
     const natural = (containerRem - CARD_W_REM) / (count - 1)
@@ -267,27 +266,57 @@ function peekRem(count: number): number {
 }
 
 function HandLane({ drawing, packages }: HandLaneProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerPx, setContainerPx] = useState(640)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width ?? el.clientWidth
+      setContainerPx(w)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (openIndex !== null && openIndex >= packages.length) setOpenIndex(null)
+  }, [packages.length, openIndex])
+
+  const containerRem = containerPx / 16
   const count = packages.length + (drawing ? 1 : 0)
-  const peek = peekRem(count === 0 ? 1 : count)
+  const peek = peekRem(count === 0 ? 1 : count, containerRem)
+  const laneWidthRem = CARD_W_REM + Math.max(0, count - 1) * peek
+  const startLeftRem = (containerRem - laneWidthRem) / 2
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={containerRef} className="flex flex-col gap-2">
       <div className="relative h-[13.5rem]">
-        {packages.map((pkg, i) => (
-          <div
-            key={`${pkg.name}-${i}`}
-            className="absolute top-0 transition-all duration-300"
-            style={{ left: `${i * peek}rem`, zIndex: i + 1 }}
-          >
-            <PackageCard packageInfo={pkg} />
-          </div>
-        ))}
+        {packages.map((pkg, i) => {
+          const isOpen = openIndex === i
+          return (
+            <div
+              key={`${pkg.name}-${i}`}
+              className="absolute top-0 transition-all duration-300"
+              style={{ left: `${startLeftRem + i * peek}rem`, zIndex: isOpen ? 60 : i + 1 }}
+            >
+              <PackageCard
+                onClose={() => setOpenIndex(null)}
+                onToggle={() => setOpenIndex(isOpen ? null : i)}
+                open={isOpen}
+                packageInfo={pkg}
+              />
+            </div>
+          )
+        })}
         {drawing && (
           <div
             className="absolute top-0 transition-all duration-300"
-            style={{ left: `${packages.length * peek}rem`, zIndex: packages.length + 1 }}
+            style={{ left: `${startLeftRem + packages.length * peek}rem`, zIndex: packages.length + 1 }}
           >
-            <PackageCardBack label="drawing" note="..." />
+            <PackageCardBack label="drawing" note="..." loading />
           </div>
         )}
       </div>
