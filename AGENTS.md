@@ -1,206 +1,67 @@
 # AGENTS.md
 
-Coding agent guidelines for the npmjack project.
+Coding agent instructions for npmjack.
 
-## Project Overview
+## Project Snapshot
 
-npmjack is a Blackjack-style game using npm package sizes. Built with TanStack Start (SSR), React 19, TypeScript, Tailwind CSS v4, shadcn/ui, and Bun.
+npmjack is a blackjack-style game where card values are npm package sizes.
 
-## Commands
+- Stack: TanStack Start (SSR), React 19, TypeScript (strict), Tailwind CSS v4, shadcn/ui, Bun.
+- Main route: [src/routes/index.tsx](src/routes/index.tsx)
+- Core game state: [src/hooks/useGame.ts](src/hooks/useGame.ts)
+- Registry fetcher: [src/lib/npm-registry.ts](src/lib/npm-registry.ts)
 
-### Development
+## Runbook
 
-```bash
-bun run dev          # Start dev server on port 3000
-bun run build        # Production build
-bun run preview      # Preview production build
-```
+- Development: bun run dev
+- Build: bun run build
+- Preview: bun run preview
+- Tests: bun run test
+- Typecheck: bunx tsc --noEmit
 
-### Testing
+Always run typecheck after code changes.
 
-```bash
-bun run test                    # Run all tests (vitest)
-bun run vitest run path/to/test # Run single test file
-bun run vitest watch            # Watch mode
-```
+## Architecture Boundaries
 
-### Type Checking
+- Routes and page orchestration: [src/routes/](src/routes/)
+- Game domain components: [src/components/game/](src/components/game/)
+- UI primitives (shadcn): [src/components/ui/](src/components/ui/)
+- State/data hooks: [src/hooks/](src/hooks/)
+- API and helpers: [src/lib/](src/lib/)
 
-```bash
-bunx tsc --noEmit    # Type check without emitting
-```
+Keep gameplay rules in hooks and keep presentational components stateless when possible.
 
-## Code Style Guidelines
+## Coding Conventions
 
-### Imports
+- Use import groups in this order: external, # aliases, relative, type imports.
+- Use #/* alias for src imports.
+- Use explicit type imports (import type) where applicable.
+- Prefer named exports (route files may use required router pattern).
+- Keep TypeScript strict-friendly: no unused locals/params.
+- Do not add comments unless requested.
 
-Order imports with blank line separators:
+## Gameplay-Critical Rules
 
-1. External packages (react, tanstack, lucide-react, etc.)
-2. Internal aliases (`#/*`)
-3. Relative imports (`./`, `../`)
-4. Type imports (use `import type`)
+- Packages with missing size must be rejected and retried silently.
+- Never re-request a package already marked as no-size in the current game lifecycle.
+- Player draw processing must stay idempotent (drawId-gated).
+- Dealer draw loop must clear pending package state on rejection/consumption.
 
-```tsx
-import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { Target } from 'lucide-react'
+Relevant implementation points:
 
-import { useCustomHook } from '#/hooks/useCustomHook'
-import { Button } from '#/components/ui/button'
-
-import { LocalComponent } from './LocalComponent'
-import type { PackageInfo } from '#/lib/npm-registry'
-```
-
-### Path Aliases
-
-Use `#/*` for imports from `src/`:
-
-```tsx
-import { Button } from '#/components/ui/button'
-import { formatDate } from '#/lib/utils'
-```
-
-### TypeScript
-
-- **Strict mode enabled** - all strict checks are on
-- **No unused locals/parameters** - will cause build errors
-- **verbatimModuleSyntax** - always use explicit type imports:
-
-```tsx
-import { useState } from 'react'
-import type { ReactNode } from 'react'
-```
-
-- Prefer explicit return types for exported functions
-- Use `interface` for object types, `type` for unions/intersections
-- Export types alongside functions when they define public API
-
-### React Components
-
-- Function components only
-- Named exports (no default exports except routes when required)
-- Destructure props in function signature with explicit interface:
-
-```tsx
-interface ButtonProps {
-  label: string
-  onClick: () => void
-  variant?: 'default' | 'secondary' | 'destructive'
-}
-
-export function Button({ label, onClick, variant = 'default' }: ButtonProps) {
-  return <button onClick={onClick}>{label}</button>
-}
-```
-
-### TanStack Router
-
-File-based routing in `src/routes/`:
-
-- `__root.tsx` - root layout with shell (html, head, body)
-- `index.tsx` - home page (`/`)
-
-Route file pattern:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/')({
-  component: PageComponent,
-})
-
-function PageComponent() {
-  return <main>...</main>
-}
-```
-
-### TanStack Query
-
-Use for data fetching with the `useQuery` hook:
-
-```tsx
-import { useQuery } from '@tanstack/react-query'
-
-export function usePackageInfo(name: string | null) {
-  return useQuery<PackageInfo>({
-    queryKey: ['package', name],
-    queryFn: () => fetchPackageInfo(name!),
-    enabled: !!name,
-    staleTime: 5 * 60 * 1000,
-  })
-}
-```
-
-### Styling
-
-- Tailwind CSS v4 with `@tailwindcss/vite` plugin
-- shadcn/ui components in `src/components/ui/`
-- Use semantic color classes: `bg-background`, `text-foreground`, `text-muted-foreground`, `text-primary`
-- Dark theme is active via `className="dark"` on `<html>` in `__root.tsx`
-- Custom CSS in `src/styles.css` using Tailwind v4 syntax
-- Import CSS as URL: `import appCss from '../styles.css?url'`
-
-### shadcn/ui
-
-- Components are in `src/components/ui/`
-- Use `cn()` utility for conditional class merging
-- Use variant props instead of custom classes:
-
-```tsx
-<Button variant="destructive">Delete</Button>
-<Button variant="secondary" size="lg">Submit</Button>
-```
-
-### Naming Conventions
-
-- **Components**: PascalCase (`Button.tsx`, `PlayerCard.tsx`)
-- **Hooks**: camelCase with `use` prefix (`useGame.ts`, `usePackageInfo.ts`)
-- **Utilities**: camelCase (`formatSize.ts`, `npm-registry.ts`)
-- **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRIES`, `API_BASE_URL`)
-- **Types**: PascalCase (`PackageInfo`, `GameStatus`)
-- **Files**: Match the primary export name
-
-### Error Handling
-
-- Throw errors for exceptional cases
-- Use TanStack Router error boundaries for route-level errors
-- Handle null/undefined with early returns or optional chaining
-
-### Comments
-
-- **Do not add comments** unless explicitly requested
-- Code should be self-documenting through clear naming
-
-## File Structure
-
-```
-src/
-├── routes/           # File-based routes (TanStack Router)
-│   ├── __root.tsx    # Root layout with dark theme
-│   └── index.tsx     # Home page
-├── components/
-│   ├── ui/           # shadcn/ui components (button, card, alert, etc.)
-│   └── game/         # Domain-specific game components
-├── hooks/            # Custom React hooks (useGame, usePackageInfo)
-├── lib/              # Utility functions and API clients
-│   ├── utils.ts      # cn() helper for class merging
-│   ├── npm-registry.ts
-│   └── random-package.ts
-├── mocks/            # Mock data for development/testing
-├── styles.css        # Global styles + shadcn CSS variables
-└── router.tsx        # Router configuration
-```
+- [src/hooks/useGame.ts](src/hooks/useGame.ts)
+- [src/routes/index.tsx](src/routes/index.tsx)
 
 ## Generated Files
 
-- `routeTree.gen.ts` - auto-generated by TanStack Router, do not edit
+- Do not edit [src/routeTree.gen.ts](src/routeTree.gen.ts). It is generated by TanStack Router.
+
+## Extra Reference
+
+For npm registry research and alternative fetching patterns, use [AGENTS.npm-registry-fetching.md](AGENTS.npm-registry-fetching.md) as reference material.
 
 ## Pre-commit Checklist
 
-1. `bun run build` succeeds
-2. `bun run test` passes (if tests exist)
-3. `bunx tsc --noEmit` - no TypeScript errors
-4. No unused imports or variables (will cause build errors)
+1. bun run build succeeds.
+2. bun run test passes (if tests exist).
+3. bunx tsc --noEmit passes.

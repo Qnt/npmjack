@@ -5,6 +5,11 @@ import type { PackageInfo } from '#/lib/npm-registry'
 
 export type GameStatus = 'idle' | 'playing' | 'dealerTurn' | 'won' | 'lost' | 'bust' | 'dealerBust'
 
+export interface PlayerDraw {
+  packageName: string
+  drawId: number
+}
+
 export interface GameState {
   targetMB: number
   dealerTargetMB: number
@@ -13,6 +18,7 @@ export interface GameState {
   playerPackages: PackageInfo[]
   dealerPackages: PackageInfo[]
   status: GameStatus
+  playerDraw: PlayerDraw | null
 }
 
 function generateTargetMB(): number {
@@ -38,16 +44,22 @@ export function useGame() {
     playerPackages: [],
     dealerPackages: [],
     status: 'idle',
+    playerDraw: null,
   })
 
   const dealerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const dealerPauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dealerPausingRef = useRef(false)
   const pendingDealerPackageRef = useRef<string | null>(null)
   const [dealerPackageName, setDealerPackageName] = useState<string | null>(null)
   const usedPackageNamesRef = useRef<Set<string>>(new Set())
+  const noSizePackageNamesRef = useRef<Set<string>>(new Set())
+  const drawIdRef = useRef(0)
+  const packagePoolRef = useRef<string[]>([])
 
-  const isLoadingPool = packagePoolQuery.isLoading
-  const poolError = packagePoolQuery.error
-  const packagePool = packagePoolQuery.data ?? []
+  if (packagePoolQuery.data && packagePoolRef.current !== packagePoolQuery.data) {
+    packagePoolRef.current = packagePoolQuery.data
+  }
 
   const startGame = useCallback(() => {
     const targetMB = generateTargetMB()
@@ -60,43 +72,60 @@ export function useGame() {
       playerPackages: [],
       dealerPackages: [],
       status: 'playing',
+      playerDraw: null,
     })
     pendingDealerPackageRef.current = null
+    dealerPausingRef.current = false
+    if (dealerPauseTimeoutRef.current) {
+      clearTimeout(dealerPauseTimeoutRef.current)
+      dealerPauseTimeoutRef.current = null
+    }
     setDealerPackageName(null)
   }, [])
 
-  const getNextPackage = useCallback((): string => {
-    if (packagePool.length === 0) {
+  const getNextPackage = useCallback((): string | null => {
+    const pool = packagePoolRef.current
+    if (pool.length === 0) {
       return 'react'
     }
 
-    const availablePackages = packagePool.filter(
-      name => !usedPackageNamesRef.current.has(name)
+    const noSizePackages = noSizePackageNamesRef.current
+    const availablePackages = pool.filter(
+      name => !usedPackageNamesRef.current.has(name) && !noSizePackages.has(name)
     )
 
-    if (availablePackages.length === 0) {
-      usedPackageNamesRef.current = new Set()
-      const randomIndex = Math.floor(Math.random() * packagePool.length)
-      const packageName = packagePool[randomIndex]!
-      usedPackageNamesRef.current.add(packageName)
-      return packageName
+    if (availablePackages.length > 0) {
+      return availablePackages[Math.floor(Math.random() * availablePackages.length)]!
     }
 
-    const randomIndex = Math.floor(Math.random() * availablePackages.length)
-    const packageName = availablePackages[randomIndex]!
-    usedPackageNamesRef.current.add(packageName)
-    return packageName
-  }, [packagePool])
+    const fallbackPackages = pool.filter(name => !noSizePackages.has(name))
+    if (fallbackPackages.length > 0) {
+      return fallbackPackages[Math.floor(Math.random() * fallbackPackages.length)]!
+    }
+
+    return null
+  }, [])
+
+  const drawPlayerPackage = useCallback(() => {
+    const packageName = getNextPackage()
+    if (!packageName) return
+    const drawId = ++drawIdRef.current
+    setGameState(prev => ({ ...prev, playerDraw: { packageName, drawId } }))
+  }, [getNextPackage])
+
+  const clearPlayerDraw = useCallback(() => {
+    setGameState(prev => ({ ...prev, playerDraw: null }))
+  }, [])
 
   const playerHit = useCallback((packageInfo: PackageInfo) => {
     setGameState(prev => {
       if (prev.status !== 'playing') return prev
 
-      if (packageInfo.unpackedSize === null) {
-        return prev
-      }
+      const packageBytes = packageInfo.unpackedSize ?? 0
 
-      const newTotalBytes = prev.playerTotalBytes + packageInfo.unpackedSize
+      usedPackageNamesRef.current.add(packageInfo.name)
+
+      const newTotalBytes = prev.playerTotalBytes + packageBytes
       const newTotalMB = bytesToMB(newTotalBytes)
 
       if (newTotalMB > prev.targetMB) {
@@ -120,11 +149,11 @@ export function useGame() {
     setGameState(prev => {
       if (prev.status !== 'dealerTurn') return prev
 
-      if (packageInfo.unpackedSize === null) {
-        return prev
-      }
+      const packageBytes = packageInfo.unpackedSize ?? 0
 
-      const newTotalBytes = prev.dealerTotalBytes + packageInfo.unpackedSize
+      usedPackageNamesRef.current.add(packageInfo.name)
+
+      const newTotalBytes = prev.dealerTotalBytes + packageBytes
       const newTotalMB = bytesToMB(newTotalBytes)
 
       if (newTotalMB > prev.targetMB) {
@@ -169,21 +198,60 @@ export function useGame() {
     })
   }, [])
 
+  const rejectPlayerPackage = useCallback((packageName: string) => {
+    noSizePackageNamesRef.current.add(packageName)
+
+    setGameState(prev => {
+      if (!prev.playerDraw || prev.playerDraw.packageName !== packageName) {
+        return prev
+      }
+
+      const nextPackageName = getNextPackage()
+      if (!nextPackageName) {
+        return {
+          ...prev,
+          playerDraw: null,
+        }
+      }
+
+      const drawId = ++drawIdRef.current
+      return {
+        ...prev,
+        playerDraw: { packageName: nextPackageName, drawId },
+      }
+    })
+  }, [getNextPackage])
+
+  const rejectDealerPackage = useCallback((packageName: string) => {
+    noSizePackageNamesRef.current.add(packageName)
+
+    if (pendingDealerPackageRef.current === packageName) {
+      pendingDealerPackageRef.current = null
+    }
+    setDealerPackageName(current => (current === packageName ? null : current))
+  }, [])
+
   useEffect(() => {
     if (gameState.status === 'dealerTurn') {
       dealerIntervalRef.current = setInterval(() => {
-        if (!pendingDealerPackageRef.current) {
+        if (!pendingDealerPackageRef.current && !dealerPausingRef.current) {
           const packageName = getNextPackage()
+          if (!packageName) return
           pendingDealerPackageRef.current = packageName
           setDealerPackageName(packageName)
         }
-      }, 1000)
+      }, 200)
 
       return () => {
         if (dealerIntervalRef.current) {
           clearInterval(dealerIntervalRef.current)
           dealerIntervalRef.current = null
         }
+        if (dealerPauseTimeoutRef.current) {
+          clearTimeout(dealerPauseTimeoutRef.current)
+          dealerPauseTimeoutRef.current = null
+        }
+        dealerPausingRef.current = false
       }
     }
   }, [gameState.status, getNextPackage])
@@ -192,6 +260,11 @@ export function useGame() {
     dealerDraw(packageInfo)
     pendingDealerPackageRef.current = null
     setDealerPackageName(null)
+    dealerPausingRef.current = true
+    dealerPauseTimeoutRef.current = setTimeout(() => {
+      dealerPausingRef.current = false
+      dealerPauseTimeoutRef.current = null
+    }, 600 + Math.random() * 800)
   }, [dealerDraw])
 
   const playerTotalMB = bytesToMB(gameState.playerTotalBytes)
@@ -204,11 +277,11 @@ export function useGame() {
     startGame,
     playerHit,
     stand,
-    getNextPackage,
+    drawPlayerPackage,
+    clearPlayerDraw,
+    rejectPlayerPackage,
+    rejectDealerPackage,
     dealerPackageName,
     handleDealerPackageLoaded,
-    isLoadingPool,
-    poolError,
-    poolSize: packagePool.length,
   }
 }

@@ -1,34 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { fetchPopularPackages, fetchTrendingPackages } from '#/lib/npms-api'
-
-const POPULAR_PACKAGES_COUNT = 200
-const TRENDING_PACKAGES_COUNT = 100
-
-function shuffle(array: string[]): string[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
+async function fetchPackagePool(): Promise<string[]> {
+  const response = await fetch('/api/packages?type=pool')
+  if (!response.ok) {
+    throw new Error('Failed to fetch package pool')
   }
-  return shuffled
+  const data = await response.json()
+  return data.packages
 }
 
 export function usePackagePool() {
   return useQuery<string[]>({
     queryKey: ['packagePool'],
-    queryFn: async () => {
-      const [popular, trending] = await Promise.all([
-        fetchPopularPackages(POPULAR_PACKAGES_COUNT),
-        fetchTrendingPackages(TRENDING_PACKAGES_COUNT),
-      ])
-
-      const uniquePackages = [...new Set([...popular, ...trending])]
-
-      return shuffle(uniquePackages)
-    },
+    queryFn: fetchPackagePool,
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    gcTime: 30* 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

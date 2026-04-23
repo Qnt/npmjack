@@ -70,19 +70,26 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
 
     const packageNames = response.results.map(r => r.package.name)
     
-    const scoresResponse = await ofetch<{ results: NpmsPackageScore[] }>(
-      `${NPMS_API}/package/mget`,
-      {
-        method: 'POST',
-        body: packageNames,
-      }
-    )
+    const mgetResponse = await fetch(`${NPMS_API}/package/mget`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(packageNames),
+    })
 
-    for (const score of scoresResponse.results) {
-      const acceleration = score.evaluation?.popularity?.downloadsAcceleration ?? 0
+    if (!mgetResponse.ok) {
+      from += batchSize
+      continue
+    }
+
+    const scoresData: Record<string, NpmsPackageScore> = await mgetResponse.json()
+
+    for (const [name, data] of Object.entries(scoresData)) {
+      const acceleration = data?.evaluation?.popularity?.downloadsAcceleration ?? 0
       if (acceleration > 0) {
         allPackages.push({
-          name: score.package.name,
+          name,
           acceleration,
         })
       }
@@ -98,24 +105,4 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
     .map(p => p.name)
 
   return sorted
-}
-
-export async function fetchPackagePool(popularLimit = 200, trendingLimit = 100): Promise<string[]> {
-  const [popular, trending] = await Promise.all([
-    fetchPopularPackages(popularLimit),
-    fetchTrendingPackages(trendingLimit),
-  ])
-
-  const combined = [...new Set([...popular, ...trending])]
-  
-  return shuffleArray(combined)
-}
-
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
-  }
-  return shuffled
 }
