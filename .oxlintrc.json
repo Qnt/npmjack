@@ -1,3 +1,10 @@
 {
-  "ignorePatterns": ["dist", ".nitro", ".tanstack", "node_modules", "src/routeTree.gen.ts"]
+  "ignorePatterns": [
+    "dist",
+    ".netlify",
+    ".nitro",
+    ".tanstack",
+    "node_modules",
+    "src/routeTree.gen.ts"
+  ]
 }
