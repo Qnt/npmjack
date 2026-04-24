@@ -3,10 +3,14 @@ import { ofetch, type FetchOptions } from 'ofetch'
 const DEFAULT_TIMEOUT_MS = 5_000
 
 export class ServerFetchError extends Error {
-  code: 'TIMEOUT' | 'UPSTREAM_ERROR'
+  code: 'TIMEOUT' | 'UPSTREAM_ERROR' | 'INVALID_PAYLOAD'
   retryable: boolean
 
-  constructor(message: string, code: 'TIMEOUT' | 'UPSTREAM_ERROR', retryable = true) {
+  constructor(
+    message: string,
+    code: 'TIMEOUT' | 'UPSTREAM_ERROR' | 'INVALID_PAYLOAD',
+    retryable = true,
+  ) {
     super(message)
     this.name = 'ServerFetchError'
     this.code = code

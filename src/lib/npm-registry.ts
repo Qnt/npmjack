@@ -1,4 +1,5 @@
 import { fetchJsonWithTimeout } from '#/lib/server-fetch'
+import { ServerFetchError } from '#/lib/server-fetch'
 
 interface PackumentDist {
   unpackedSize?: number
@@ -82,14 +83,24 @@ export async function fetchPackageInfo(packageName: string): Promise<PackageInfo
     `https://registry.npmjs.org/${encodedName}`,
   )
 
+  assertPackument(packument)
+
   const latestVersion = packument['dist-tags'].latest
   if (!latestVersion) {
-    throw new Error(`No latest version found for ${packageName}`)
+    throw new ServerFetchError(
+      `No latest version found for ${packageName}`,
+      'INVALID_PAYLOAD',
+      false,
+    )
   }
 
   const versionData = packument.versions[latestVersion]
   if (!versionData) {
-    throw new Error(`Version ${latestVersion} not found for ${packageName}`)
+    throw new ServerFetchError(
+      `Version ${latestVersion} not found for ${packageName}`,
+      'INVALID_PAYLOAD',
+      false,
+    )
   }
 
   const repoUrl = normalizeRepositoryUrl(
@@ -127,4 +138,16 @@ export function formatSize(bytes: number | null): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function assertPackument(value: unknown): asserts value is Packument {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('name' in value) ||
+    !('dist-tags' in value) ||
+    !('versions' in value)
+  ) {
+    throw new ServerFetchError('Invalid npm registry payload', 'INVALID_PAYLOAD', false)
+  }
 }

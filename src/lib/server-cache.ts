@@ -19,6 +19,7 @@ interface GetOrRefreshServerCacheResult<T> {
 }
 
 const serverCache = new Map<string, CacheEntry<unknown>>()
+const inFlightRefreshes = new Map<string, Promise<unknown>>()
 
 export async function getOrRefreshServerCache<T>({
   key,
@@ -36,8 +37,30 @@ export async function getOrRefreshServerCache<T>({
     }
   }
 
+  const inFlight = inFlightRefreshes.get(key) as Promise<T> | undefined
+  if (inFlight) {
+    try {
+      return {
+        data: await inFlight,
+        state: 'fresh',
+      }
+    } catch (error) {
+      if (cached && cached.staleUntil > now) {
+        return {
+          data: cached.data,
+          state: 'stale',
+        }
+      }
+
+      throw error
+    }
+  }
+
+  const refreshPromise = loader()
+  inFlightRefreshes.set(key, refreshPromise)
+
   try {
-    const data = await loader()
+    const data = await refreshPromise
     serverCache.set(key, {
       data,
       expiresAt: now + ttlMs,
@@ -57,9 +80,12 @@ export async function getOrRefreshServerCache<T>({
     }
 
     throw error
+  } finally {
+    inFlightRefreshes.delete(key)
   }
 }
 
 export function clearServerCache() {
   serverCache.clear()
+  inFlightRefreshes.clear()
 }

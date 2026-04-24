@@ -33,4 +33,34 @@ describe('fetchPackageInfo', () => {
       timeout: 5000,
     })
   })
+
+  it('rejects packuments without a latest dist-tag', async () => {
+    mockedOfetch.mockResolvedValueOnce({
+      name: 'react',
+      'dist-tags': {},
+      versions: {},
+    })
+
+    await expect(fetchPackageInfo('react')).rejects.toEqual(
+      expect.objectContaining({
+        code: 'INVALID_PAYLOAD',
+        retryable: false,
+      })
+    )
+  })
+
+  it('rejects packuments missing the latest version payload', async () => {
+    mockedOfetch.mockResolvedValueOnce({
+      name: 'react',
+      'dist-tags': { latest: '1.0.0' },
+      versions: {},
+    })
+
+    await expect(fetchPackageInfo('react')).rejects.toEqual(
+      expect.objectContaining({
+        code: 'INVALID_PAYLOAD',
+        retryable: false,
+      })
+    )
+  })
 })

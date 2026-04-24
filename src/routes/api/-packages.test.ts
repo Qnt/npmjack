@@ -116,4 +116,76 @@ describe('/api/packages GET', () => {
       retryable: true,
     })
   })
+
+  it('marks invalid query types as non-retryable request errors', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const response = await getPackagesResponse('?type=unknown')
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid type. Use: popular, trending, or pool',
+      code: 'INVALID_TYPE',
+      retryable: false,
+    })
+    expect(errorSpy).not.toHaveBeenCalled()
+  })
+
+  it('maps timeout failures to a timeout error code', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const timeoutError = new Error('timed out')
+    timeoutError.name = 'ServerFetchError'
+    Object.assign(timeoutError, {
+      code: 'TIMEOUT',
+      retryable: true,
+    })
+
+    mockFetchPopularPackages.mockRejectedValueOnce(timeoutError)
+
+    const response = await getPackagesResponse('?type=popular&limit=1')
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to fetch packages',
+      code: 'UPSTREAM_TIMEOUT',
+      retryable: true,
+    })
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Package API error',
+      expect.objectContaining({
+        code: 'UPSTREAM_TIMEOUT',
+        retryable: true,
+        type: 'popular',
+      })
+    )
+  })
+
+  it('maps invalid upstream payloads to a validation error code', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const payloadError = new Error('bad payload')
+    payloadError.name = 'ServerFetchError'
+    Object.assign(payloadError, {
+      code: 'INVALID_PAYLOAD',
+      retryable: false,
+    })
+
+    mockFetchTrendingPackages.mockRejectedValueOnce(payloadError)
+
+    const response = await getPackagesResponse('?type=trending&limit=1')
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to fetch packages',
+      code: 'INVALID_UPSTREAM_PAYLOAD',
+      retryable: false,
+    })
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Package API error',
+      expect.objectContaining({
+        code: 'INVALID_UPSTREAM_PAYLOAD',
+        retryable: false,
+        type: 'trending',
+      })
+    )
+  })
 })

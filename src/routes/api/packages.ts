@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { createApiErrorResponse } from '#/lib/api-error'
 import { getOrRefreshServerCache } from '#/lib/server-cache'
+import { ServerFetchError } from '#/lib/server-fetch'
+import { logPackagesRouteError } from '#/lib/server-log'
 import { fetchPopularPackages, fetchTrendingPackages } from '#/lib/npms-server'
 
 const PACKAGES_CACHE_TTL_MS = 5 * 60 * 1000
@@ -37,13 +40,18 @@ export const Route = createFileRoute('/api/packages')({
           }
 
           return Response.json(
-            { error: 'Invalid type. Use: popular, trending, or pool', code: 'INVALID_TYPE', retryable: false },
+            createApiErrorResponse('INVALID_TYPE'),
             { status: 400 }
           )
         } catch (error) {
-          console.error('Error fetching packages:', error)
+          const code = mapPackagesErrorCode(error)
+          logPackagesRouteError({
+            code,
+            retryable: createApiErrorResponse(code).retryable,
+            type,
+          })
           return Response.json(
-            { error: 'Failed to fetch packages', code: 'UPSTREAM_UNAVAILABLE', retryable: true },
+            createApiErrorResponse(code),
             { status: 500 }
           )
         }
@@ -100,6 +108,36 @@ async function getCachedPackagePool(popularLimit: number, trendingLimit: number)
     ttlMs: PACKAGES_CACHE_TTL_MS,
     staleTtlMs: PACKAGES_CACHE_STALE_TTL_MS,
   })
+}
+
+function mapPackagesErrorCode(error: unknown) {
+  const serverError =
+    error instanceof ServerFetchError || isServerFetchLikeError(error)
+      ? error
+      : null
+
+  if (serverError) {
+    if (serverError.code === 'TIMEOUT') {
+      return 'UPSTREAM_TIMEOUT'
+    }
+
+    if (serverError.code === 'INVALID_PAYLOAD') {
+      return 'INVALID_UPSTREAM_PAYLOAD'
+    }
+  }
+
+  return 'UPSTREAM_UNAVAILABLE'
+}
+
+function isServerFetchLikeError(
+  error: unknown,
+): error is Pick<ServerFetchError, 'code' | 'retryable'> {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    'retryable' in error
+  )
 }
 
 export function parseLimit(

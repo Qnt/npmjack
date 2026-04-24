@@ -1,4 +1,5 @@
 import { fetchJsonWithTimeout } from '#/lib/server-fetch'
+import { ServerFetchError } from '#/lib/server-fetch'
 
 interface NpmsSearchResult {
   package: {
@@ -44,6 +45,8 @@ export async function fetchPopularPackages(limit: number): Promise<string[]> {
     },
   })
 
+  assertNpmsSearchResponse(response)
+
   return response.results.map(r => r.package.name)
 }
 
@@ -62,6 +65,8 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
         from,
       },
     })
+
+    assertNpmsSearchResponse(response)
 
     if (response.results.length === 0) {
       hasMore = false
@@ -85,6 +90,8 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
       break
     }
 
+    assertNpmsScoresResponse(scoresData)
+
     for (const [name, data] of Object.entries(scoresData)) {
       const acceleration = data?.evaluation?.popularity?.downloadsAcceleration ?? 0
       if (acceleration > 0) {
@@ -105,4 +112,23 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
     .map(p => p.name)
 
   return sorted
+}
+
+function assertNpmsSearchResponse(value: unknown): asserts value is NpmsSearchResponse {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('results' in value) ||
+    !Array.isArray(value.results)
+  ) {
+    throw new ServerFetchError('Invalid NPMS search payload', 'INVALID_PAYLOAD', false)
+  }
+}
+
+function assertNpmsScoresResponse(
+  value: unknown,
+): asserts value is Record<string, NpmsPackageScore> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new ServerFetchError('Invalid NPMS scores payload', 'INVALID_PAYLOAD', false)
+  }
 }

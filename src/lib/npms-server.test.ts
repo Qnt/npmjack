@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('#/lib/server-fetch', () => ({
-  fetchJsonWithTimeout: vi.fn(),
-}))
+vi.mock('#/lib/server-fetch', async importOriginal => {
+  const actual = await importOriginal<typeof import('#/lib/server-fetch')>()
+
+  return {
+    ...actual,
+    fetchJsonWithTimeout: vi.fn(),
+  }
+})
 
 import { fetchJsonWithTimeout } from '#/lib/server-fetch'
 
@@ -24,5 +29,16 @@ describe('fetchTrendingPackages', () => {
       .mockRejectedValueOnce(new Error('mget failed'))
 
     await expect(fetchTrendingPackages(1)).resolves.toEqual([])
+  })
+
+  it('rejects invalid search payloads', async () => {
+    mockedFetchJsonWithTimeout.mockResolvedValueOnce({ total: 1 })
+
+    await expect(fetchTrendingPackages(1)).rejects.toEqual(
+      expect.objectContaining({
+        code: 'INVALID_PAYLOAD',
+        retryable: false,
+      })
+    )
   })
 })
