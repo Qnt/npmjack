@@ -4,8 +4,8 @@ import { usePackageInfo } from '#/hooks/usePackageInfo'
 import { usePackagePool } from '#/hooks/usePackagePool'
 import { useGame } from '#/hooks/useGame'
 
-export function useGameBoard() {
-  const game = useGame()
+export function useGameBoard(initialRound?: Parameters<typeof useGame>[0]) {
+  const game = useGame(initialRound)
   const processedDrawIdRef = useRef<number | null>(null)
   const packagePoolQuery = usePackagePool()
   const isDeckReady = packagePoolQuery.isSuccess && packagePoolQuery.data.length > 0

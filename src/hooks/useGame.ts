@@ -34,12 +34,23 @@ function bytesToMB(bytes: number): number {
   return bytes / (1024 * 1024)
 }
 
-function createNewGameState(): GameState {
-  const targetMB = generateTargetMB()
+export function createInitialRound(): Pick<GameState, 'targetMB' | 'dealerTargetMB'> {
+  const { targetMB, dealerTargetMB } = createNewGameState()
 
   return {
     targetMB,
-    dealerTargetMB: generateDealerTargetMB(targetMB),
+    dealerTargetMB,
+  }
+}
+
+export function createNewGameState(
+  overrides: Partial<Pick<GameState, 'targetMB' | 'dealerTargetMB'>> = {},
+): GameState {
+  const targetMB = overrides.targetMB ?? generateTargetMB()
+
+  return {
+    targetMB,
+    dealerTargetMB: overrides.dealerTargetMB ?? generateDealerTargetMB(targetMB),
     playerTotalBytes: 0,
     dealerTotalBytes: 0,
     playerPackages: [],
@@ -83,13 +94,6 @@ export function selectNextPackage(
     return availablePackages[Math.floor(Math.random() * availablePackages.length)]!
   }
 
-  const fallbackPackages = pool.filter(
-    name => !noSizePackageNames.has(name) && !skippedPackageNames.has(name)
-  )
-  if (fallbackPackages.length > 0) {
-    return fallbackPackages[Math.floor(Math.random() * fallbackPackages.length)]!
-  }
-
   return null
 }
 
@@ -119,8 +123,14 @@ export function finalizeDealerTurn(state: GameState): GameState {
   }
 }
 
-export function useGame() {
-  const [gameState, setGameState] = useState<GameState>(createNewGameState)
+export function canStartPlayerDraw(state: GameState): boolean {
+  return state.status === 'playing' && state.playerDraw === null
+}
+
+export function useGame(
+  initialRound: Partial<Pick<GameState, 'targetMB' | 'dealerTargetMB'>> = {},
+) {
+  const [gameState, setGameState] = useState<GameState>(() => createNewGameState(initialRound))
 
   const dealerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dealerPauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -165,10 +175,15 @@ export function useGame() {
   }, [])
 
   const drawPlayerPackage = useCallback(() => {
-    const packageName = getNextPackage()
-    if (!packageName) return
-    const drawId = ++drawIdRef.current
-    setGameState(prev => ({ ...prev, playerDraw: { packageName, drawId } }))
+    setGameState(prev => {
+      if (!canStartPlayerDraw(prev)) return prev
+
+      const packageName = getNextPackage()
+      if (!packageName) return prev
+
+      const drawId = ++drawIdRef.current
+      return { ...prev, playerDraw: { packageName, drawId } }
+    })
   }, [getNextPackage])
 
   const clearPlayerDraw = useCallback(() => {

@@ -4,11 +4,21 @@ import { AlertCircle, Dice5 } from 'lucide-react'
 import { FeltOverlay } from '#/components/game/FeltOverlay'
 import { PlayBoard } from '#/components/game/PlayBoard'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { createInitialRound } from '#/hooks/useGame'
 import { useGameBoard } from '#/hooks/useGameBoard'
 
-export const Route = createFileRoute('/game')({ component: Game })
+export const Route = createFileRoute('/game')({
+  loader: () => createInitialRound(),
+  component: GameRoute,
+})
 
-function Game() {
+function GameRoute() {
+  const initialRound = Route.useLoaderData()
+
+  return <GameScreen initialRound={initialRound} />
+}
+
+export function GameScreen({ initialRound }: { initialRound: ReturnType<typeof createInitialRound> }) {
   const {
     game,
     handleRetryDeck,
@@ -18,7 +28,7 @@ function Game() {
     isLoadingDealer,
     isLoadingPlayer,
     packagePoolError,
-  } = useGameBoard()
+  } = useGameBoard(initialRound)
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -1,6 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { getOrRefreshServerCache } from '#/lib/server-cache'
 import { fetchPopularPackages, fetchTrendingPackages } from '#/lib/npms-server'
+
+const PACKAGES_CACHE_TTL_MS = 5 * 60 * 1000
+const PACKAGES_CACHE_STALE_TTL_MS = 30 * 60 * 1000
+
+type PackageSource = 'popular' | 'trending'
 
 export const Route = createFileRoute('/api/packages')({
   server: {
@@ -12,34 +18,34 @@ export const Route = createFileRoute('/api/packages')({
 
         try {
           if (type === 'popular') {
-            const packages = await fetchPopularPackages(limit)
+            const { data: packages } = await getCachedPackageSource('popular', limit)
             return Response.json({ packages })
           }
-          
+           
           if (type === 'trending') {
-            const packages = await fetchTrendingPackages(limit)
+            const { data: packages } = await getCachedPackageSource('trending', limit)
             return Response.json({ packages })
           }
           
           if (type === 'pool') {
             const popularLimit = parseLimit(url.searchParams.get('popularLimit'), 200, 1, 250)
             const trendingLimit = parseLimit(url.searchParams.get('trendingLimit'), 100, 1, 250)
-            
-            const [popular, trending] = await Promise.all([
-              fetchPopularPackages(popularLimit),
-              fetchTrendingPackages(trendingLimit),
-            ])
-            
-            const uniquePackages = [...new Set([...popular, ...trending])]
-            const shuffled = shuffleArray(uniquePackages)
-            
-            return Response.json({ packages: shuffled })
+
+            const { data: packages } = await getCachedPackagePool(popularLimit, trendingLimit)
+
+            return Response.json({ packages })
           }
-          
-          return Response.json({ error: 'Invalid type. Use: popular, trending, or pool' }, { status: 400 })
+
+          return Response.json(
+            { error: 'Invalid type. Use: popular, trending, or pool', code: 'INVALID_TYPE', retryable: false },
+            { status: 400 }
+          )
         } catch (error) {
           console.error('Error fetching packages:', error)
-          return Response.json({ error: 'Failed to fetch packages' }, { status: 500 })
+          return Response.json(
+            { error: 'Failed to fetch packages', code: 'UPSTREAM_UNAVAILABLE', retryable: true },
+            { status: 500 }
+          )
         }
       },
     },
@@ -53,6 +59,47 @@ function shuffleArray<T>(array: T[]): T[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
   }
   return shuffled
+}
+
+function getPackagesFetcher(source: PackageSource) {
+  return source === 'popular' ? fetchPopularPackages : fetchTrendingPackages
+}
+
+function getPackagesCacheKey(source: PackageSource, limit: number) {
+  return `packages:${source}:${limit}`
+}
+
+async function getCachedPackageSource(source: PackageSource, limit: number) {
+  return getOrRefreshServerCache({
+    key: getPackagesCacheKey(source, limit),
+    loader: () => getPackagesFetcher(source)(limit),
+    ttlMs: PACKAGES_CACHE_TTL_MS,
+    staleTtlMs: PACKAGES_CACHE_STALE_TTL_MS,
+  })
+}
+
+async function getCachedPackagePool(popularLimit: number, trendingLimit: number) {
+  return getOrRefreshServerCache({
+    key: `packages:pool:${popularLimit}:${trendingLimit}`,
+    loader: async () => {
+      const [popularResult, trendingResult] = await Promise.allSettled([
+        getCachedPackageSource('popular', popularLimit),
+        getCachedPackageSource('trending', trendingLimit),
+      ])
+
+      const popular = popularResult.status === 'fulfilled' ? popularResult.value.data : []
+      const trending = trendingResult.status === 'fulfilled' ? trendingResult.value.data : []
+
+      if (popular.length === 0 && trending.length === 0) {
+        throw new Error('No package sources available')
+      }
+
+      const uniquePackages = [...new Set([...popular, ...trending])]
+      return shuffleArray(uniquePackages)
+    },
+    ttlMs: PACKAGES_CACHE_TTL_MS,
+    staleTtlMs: PACKAGES_CACHE_STALE_TTL_MS,
+  })
 }
 
 export function parseLimit(

@@ -1,6 +1,10 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  canStartPlayerDraw,
+  createNewGameState,
   finalizeDealerTurn,
   resolveRoundOutcome,
   selectNextPackage,
@@ -45,6 +49,34 @@ describe('useGame helpers', () => {
 
     expect(selected).toBeNull()
     expect(randomSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not fall back to packages already used this round', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    const selected = selectNextPackage(
+      ['react'],
+      new Set<string>(['react']),
+      new Set<string>(),
+      new Set<string>(),
+    )
+
+    expect(selected).toBeNull()
+    expect(randomSpy).not.toHaveBeenCalled()
+  })
+
+  it('can create a deterministic initial state for SSR', () => {
+    const state = createNewGameState({ targetMB: 2, dealerTargetMB: 1.5 })
+
+    expect(state.targetMB).toBe(2)
+    expect(state.dealerTargetMB).toBe(1.5)
+    expect(state.status).toBe('playing')
+  })
+
+  it('does not allow player draws outside an idle playing state', () => {
+    expect(canStartPlayerDraw(createState())).toBe(true)
+    expect(canStartPlayerDraw(createState({ status: 'dealerTurn' }))).toBe(false)
+    expect(canStartPlayerDraw(createState({ playerDraw: { packageName: 'react', drawId: 1 } }))).toBe(false)
   })
 
   it('finalizes an empty dealer turn instead of leaving dealerTurn active', () => {

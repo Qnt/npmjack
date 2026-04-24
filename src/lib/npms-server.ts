@@ -1,4 +1,4 @@
-import { ofetch } from 'ofetch'
+import { fetchJsonWithTimeout } from '#/lib/server-fetch'
 
 interface NpmsSearchResult {
   package: {
@@ -36,7 +36,7 @@ interface NpmsPackageScore {
 const NPMS_API = 'https://api.npms.io/v2'
 
 export async function fetchPopularPackages(limit: number): Promise<string[]> {
-  const response = await ofetch<NpmsSearchResponse>(`${NPMS_API}/search`, {
+  const response = await fetchJsonWithTimeout<NpmsSearchResponse>(`${NPMS_API}/search`, {
     query: {
       q: 'not:unstable',
       size: Math.min(limit, 250),
@@ -55,7 +55,7 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
   let hasMore = true
   
   while (hasMore && allPackages.length < limit * 3) {
-    const response = await ofetch<NpmsSearchResponse>(`${NPMS_API}/search`, {
+    const response = await fetchJsonWithTimeout<NpmsSearchResponse>(`${NPMS_API}/search`, {
       query: {
         q: 'not:unstable',
         size: batchSize,
@@ -70,20 +70,20 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
 
     const packageNames = response.results.map(r => r.package.name)
     
-    const mgetResponse = await fetch(`${NPMS_API}/package/mget`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(packageNames),
-    })
+    const scoresData = await fetchJsonWithTimeout<Record<string, NpmsPackageScore>>(
+      `${NPMS_API}/package/mget`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: packageNames,
+      }
+    ).catch(() => null)
 
-    if (!mgetResponse.ok) {
-      from += batchSize
-      continue
+    if (!scoresData) {
+      break
     }
-
-    const scoresData: Record<string, NpmsPackageScore> = await mgetResponse.json()
 
     for (const [name, data] of Object.entries(scoresData)) {
       const acceleration = data?.evaluation?.popularity?.downloadsAcceleration ?? 0

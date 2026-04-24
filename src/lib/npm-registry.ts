@@ -1,4 +1,4 @@
-import { ofetch } from 'ofetch'
+import { fetchJsonWithTimeout } from '#/lib/server-fetch'
 
 interface PackumentDist {
   unpackedSize?: number
@@ -78,7 +78,7 @@ export async function fetchPackageInfo(packageName: string): Promise<PackageInfo
     ? `@${encodeURIComponent(packageName.slice(1))}`
     : encodeURIComponent(packageName)
 
-  const packument = await ofetch<Packument>(
+  const packument = await fetchJsonWithTimeout<Packument>(
     `https://registry.npmjs.org/${encodedName}`,
   )
 
