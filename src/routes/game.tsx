@@ -17,11 +17,19 @@ export const Route = createFileRoute('/game')({ component: Game })
 function Game() {
   const game = useGame()
   const processedDrawIdRef = useRef<number | null>(null)
-  const { data: playerPackageInfo, isLoading: isLoadingPlayer } = usePackageInfo(
+  const {
+    data: playerPackageInfo,
+    isError: isPlayerPackageError,
+    isLoading: isLoadingPlayer,
+  } = usePackageInfo(
     game.playerDraw?.packageName ?? null,
     game.playerDraw?.drawId
   )
-  const { data: dealerPackageInfo, isLoading: isLoadingDealer } = usePackageInfo(
+  const {
+    data: dealerPackageInfo,
+    isError: isDealerPackageError,
+    isLoading: isLoadingDealer,
+  } = usePackageInfo(
     game.dealerPackageName
   )
 
@@ -35,6 +43,13 @@ function Game() {
   }, [])
 
   useEffect(() => {
+    if (game.playerDraw && isPlayerPackageError) {
+      if (processedDrawIdRef.current === game.playerDraw.drawId) return
+      processedDrawIdRef.current = game.playerDraw.drawId
+      game.skipPlayerPackage(game.playerDraw.packageName)
+      return
+    }
+
     if (playerPackageInfo && !isLoadingPlayer && game.playerDraw) {
       if (processedDrawIdRef.current === game.playerDraw.drawId) return
 
@@ -48,9 +63,14 @@ function Game() {
       game.playerHit(playerPackageInfo)
       game.clearPlayerDraw()
     }
-  }, [playerPackageInfo, isLoadingPlayer, game.playerDraw, game])
+  }, [playerPackageInfo, isLoadingPlayer, isPlayerPackageError, game.playerDraw, game])
 
   useEffect(() => {
+    if (game.dealerPackageName && isDealerPackageError) {
+      game.skipDealerPackage(game.dealerPackageName)
+      return
+    }
+
     if (dealerPackageInfo && !isLoadingDealer && game.dealerPackageName) {
       if (dealerPackageInfo.unpackedSize === null) {
         game.rejectDealerPackage(game.dealerPackageName)
@@ -62,7 +82,7 @@ function Game() {
         !game.playerPackages.some(p => p.name === dealerPackageInfo.name)
       if (isNewPackage) game.handleDealerPackageLoaded(dealerPackageInfo)
     }
-  }, [dealerPackageInfo, isLoadingDealer, game])
+  }, [dealerPackageInfo, isLoadingDealer, isDealerPackageError, game])
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/packages')({
       GET: async ({ request }) => {
         const url = new URL(request.url)
         const type = url.searchParams.get('type')
-        const limit = parseInt(url.searchParams.get('limit') || '100', 10)
+        const limit = parseLimit(url.searchParams.get('limit'), 100, 1, 250)
 
         try {
           if (type === 'popular') {
@@ -22,8 +22,8 @@ export const Route = createFileRoute('/api/packages')({
           }
           
           if (type === 'pool') {
-            const popularLimit = parseInt(url.searchParams.get('popularLimit') || '200', 10)
-            const trendingLimit = parseInt(url.searchParams.get('trendingLimit') || '100', 10)
+            const popularLimit = parseLimit(url.searchParams.get('popularLimit'), 200, 1, 250)
+            const trendingLimit = parseLimit(url.searchParams.get('trendingLimit'), 100, 1, 250)
             
             const [popular, trending] = await Promise.all([
               fetchPopularPackages(popularLimit),
@@ -53,4 +53,18 @@ function shuffleArray<T>(array: T[]): T[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
   }
   return shuffled
+}
+
+export function parseLimit(
+  value: string | null,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const parsed = Number.parseInt(value ?? '', 10)
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  return Math.min(Math.max(parsed, min), max)
 }
