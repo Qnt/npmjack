@@ -84,10 +84,10 @@ export function selectNextPackage(
   }
 
   const availablePackages = pool.filter(
-    name =>
+    (name) =>
       !usedPackageNames.has(name) &&
       !noSizePackageNames.has(name) &&
-      !skippedPackageNames.has(name)
+      !skippedPackageNames.has(name),
   )
 
   if (availablePackages.length > 0) {
@@ -115,11 +115,7 @@ export function finalizeDealerTurn(state: GameState): GameState {
 
   return {
     ...state,
-    status: resolveRoundOutcome(
-      state.targetMB,
-      state.playerTotalBytes,
-      state.dealerTotalBytes,
-    ),
+    status: resolveRoundOutcome(state.targetMB, state.playerTotalBytes, state.dealerTotalBytes),
   }
 }
 
@@ -175,7 +171,7 @@ export function useGame(
   }, [])
 
   const drawPlayerPackage = useCallback(() => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (!canStartPlayerDraw(prev)) return prev
 
       const packageName = getNextPackage()
@@ -187,11 +183,11 @@ export function useGame(
   }, [getNextPackage])
 
   const clearPlayerDraw = useCallback(() => {
-    setGameState(prev => ({ ...prev, playerDraw: null }))
+    setGameState((prev) => ({ ...prev, playerDraw: null }))
   }, [])
 
   const playerHit = useCallback((packageInfo: PackageInfo) => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (prev.status !== 'playing') return prev
 
       const packageBytes = packageInfo.unpackedSize ?? 0
@@ -219,7 +215,7 @@ export function useGame(
   }, [])
 
   const dealerDraw = useCallback((packageInfo: PackageInfo) => {
-    setGameState(prev => {
+    setGameState((prev) => {
       if (prev.status !== 'dealerTurn') return prev
 
       const packageBytes = packageInfo.unpackedSize ?? 0
@@ -243,11 +239,7 @@ export function useGame(
           ...prev,
           dealerTotalBytes: newTotalBytes,
           dealerPackages: [...prev.dealerPackages, packageInfo],
-          status: resolveRoundOutcome(
-            prev.targetMB,
-            prev.playerTotalBytes,
-            newTotalBytes,
-          ),
+          status: resolveRoundOutcome(prev.targetMB, prev.playerTotalBytes, newTotalBytes),
         }
       }
 
@@ -260,61 +252,79 @@ export function useGame(
   }, [])
 
   const stand = useCallback(() => {
-    setGameState(prev => transitionToDealerTurn(prev))
+    setGameState((prev) => transitionToDealerTurn(prev))
   }, [])
 
   const finishDealerTurn = useCallback(() => {
-    setGameState(prev => finalizeDealerTurn(prev))
+    setGameState((prev) => finalizeDealerTurn(prev))
   }, [])
 
-  const replacePlayerDraw = useCallback((packageName: string, excludedPackages: Set<string>) => {
-    excludedPackages.add(packageName)
+  const replacePlayerDraw = useCallback(
+    (packageName: string, excludedPackages: Set<string>) => {
+      excludedPackages.add(packageName)
 
-    setGameState(prev => {
-      if (!prev.playerDraw || prev.playerDraw.packageName !== packageName) {
-        return prev
-      }
+      setGameState((prev) => {
+        if (!prev.playerDraw || prev.playerDraw.packageName !== packageName) {
+          return prev
+        }
 
-      const nextPackageName = getNextPackage()
-      if (!nextPackageName) {
+        const nextPackageName = getNextPackage()
+        if (!nextPackageName) {
+          return {
+            ...prev,
+            playerDraw: null,
+          }
+        }
+
+        const drawId = ++drawIdRef.current
         return {
           ...prev,
-          playerDraw: null,
+          playerDraw: { packageName: nextPackageName, drawId },
         }
+      })
+    },
+    [getNextPackage],
+  )
+
+  const clearPendingDealerPackage = useCallback(
+    (packageName: string, excludedPackages: Set<string>) => {
+      excludedPackages.add(packageName)
+
+      if (pendingDealerPackageRef.current === packageName) {
+        pendingDealerPackageRef.current = null
       }
+      setDealerPackageName((current) => (current === packageName ? null : current))
+    },
+    [],
+  )
 
-      const drawId = ++drawIdRef.current
-      return {
-        ...prev,
-        playerDraw: { packageName: nextPackageName, drawId },
-      }
-    })
-  }, [getNextPackage])
+  const rejectPlayerPackage = useCallback(
+    (packageName: string) => {
+      replacePlayerDraw(packageName, noSizePackageNamesRef.current)
+    },
+    [replacePlayerDraw],
+  )
 
-  const clearPendingDealerPackage = useCallback((packageName: string, excludedPackages: Set<string>) => {
-    excludedPackages.add(packageName)
+  const rejectDealerPackage = useCallback(
+    (packageName: string) => {
+      clearPendingDealerPackage(packageName, noSizePackageNamesRef.current)
+    },
+    [clearPendingDealerPackage],
+  )
 
-    if (pendingDealerPackageRef.current === packageName) {
-      pendingDealerPackageRef.current = null
-    }
-    setDealerPackageName(current => (current === packageName ? null : current))
-  }, [])
+  const skipPlayerPackage = useCallback(
+    (packageName: string) => {
+      replacePlayerDraw(packageName, skippedPackageNamesRef.current)
+    },
+    [replacePlayerDraw],
+  )
 
-  const rejectPlayerPackage = useCallback((packageName: string) => {
-    replacePlayerDraw(packageName, noSizePackageNamesRef.current)
-  }, [replacePlayerDraw])
-
-  const rejectDealerPackage = useCallback((packageName: string) => {
-    clearPendingDealerPackage(packageName, noSizePackageNamesRef.current)
-  }, [clearPendingDealerPackage])
-
-  const skipPlayerPackage = useCallback((packageName: string) => {
-    replacePlayerDraw(packageName, skippedPackageNamesRef.current)
-  }, [replacePlayerDraw])
-
-  const skipDealerPackage = useCallback((packageName: string) => {
-    clearPendingDealerPackage(packageName, skippedPackageNamesRef.current)
-  }, [clearPendingDealerPackage])
+  const skipDealerPackage = useCallback(
+    (packageName: string) => {
+      clearPendingDealerPackage(packageName, skippedPackageNamesRef.current)
+    },
+    [clearPendingDealerPackage],
+  )
 
   useEffect(() => {
     if (gameState.status === 'dealerTurn') {
@@ -344,16 +354,22 @@ export function useGame(
     }
   }, [finishDealerTurn, gameState.status, getNextPackage])
 
-  const handleDealerPackageLoaded = useCallback((packageInfo: PackageInfo) => {
-    dealerDraw(packageInfo)
-    pendingDealerPackageRef.current = null
-    setDealerPackageName(null)
-    dealerPausingRef.current = true
-    dealerPauseTimeoutRef.current = setTimeout(() => {
-      dealerPausingRef.current = false
-      dealerPauseTimeoutRef.current = null
-    }, 600 + Math.random() * 800)
-  }, [dealerDraw])
+  const handleDealerPackageLoaded = useCallback(
+    (packageInfo: PackageInfo) => {
+      dealerDraw(packageInfo)
+      pendingDealerPackageRef.current = null
+      setDealerPackageName(null)
+      dealerPausingRef.current = true
+      dealerPauseTimeoutRef.current = setTimeout(
+        () => {
+          dealerPausingRef.current = false
+          dealerPauseTimeoutRef.current = null
+        },
+        600 + Math.random() * 800,
+      )
+    },
+    [dealerDraw],
+  )
 
   const playerTotalMB = bytesToMB(gameState.playerTotalBytes)
   const dealerTotalMB = bytesToMB(gameState.dealerTotalBytes)

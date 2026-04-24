@@ -76,7 +76,9 @@ describe('useGame helpers', () => {
   it('does not allow player draws outside an idle playing state', () => {
     expect(canStartPlayerDraw(createState())).toBe(true)
     expect(canStartPlayerDraw(createState({ status: 'dealerTurn' }))).toBe(false)
-    expect(canStartPlayerDraw(createState({ playerDraw: { packageName: 'react', drawId: 1 } }))).toBe(false)
+    expect(
+      canStartPlayerDraw(createState({ playerDraw: { packageName: 'react', drawId: 1 } })),
+    ).toBe(false)
   })
 
   it('finalizes an empty dealer turn instead of leaving dealerTurn active', () => {
@@ -97,8 +99,6 @@ describe('useGame helpers', () => {
     const playerTotalBytes = Math.round(1.8 * 1024 * 1024)
     const dealerTotalBytes = Math.round(1.9 * 1024 * 1024)
 
-    expect(
-      resolveRoundOutcome(targetMB, playerTotalBytes, dealerTotalBytes),
-    ).toBe('lost')
+    expect(resolveRoundOutcome(targetMB, playerTotalBytes, dealerTotalBytes)).toBe('lost')
   })
 })

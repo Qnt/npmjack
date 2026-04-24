@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('#/lib/server-fetch', async importOriginal => {
+vi.mock('#/lib/server-fetch', async (importOriginal) => {
   const actual = await importOriginal<typeof import('#/lib/server-fetch')>()
 
   return {
@@ -24,7 +24,13 @@ describe('fetchTrendingPackages', () => {
     mockedFetchJsonWithTimeout
       .mockResolvedValueOnce({
         total: 1,
-        results: [{ package: { name: 'react', version: '1.0.0' }, score: { final: 1, detail: { quality: 1, popularity: 1, maintenance: 1 } }, searchScore: 1 }],
+        results: [
+          {
+            package: { name: 'react', version: '1.0.0' },
+            score: { final: 1, detail: { quality: 1, popularity: 1, maintenance: 1 } },
+            searchScore: 1,
+          },
+        ],
       })
       .mockRejectedValueOnce(new Error('mget failed'))
 
@@ -38,7 +44,7 @@ describe('fetchTrendingPackages', () => {
       expect.objectContaining({
         code: 'INVALID_PAYLOAD',
         retryable: false,
-      })
+      }),
     )
   })
 })

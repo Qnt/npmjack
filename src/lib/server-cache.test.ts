@@ -17,12 +17,14 @@ describe('getOrRefreshServerCache', () => {
   it('returns stale data when refresh fails inside stale window', async () => {
     const loader = vi.fn().mockResolvedValueOnce(['react'])
 
-    await expect(getOrRefreshServerCache({
-      key: 'pool:1:1',
-      loader,
-      ttlMs: 1_000,
-      staleTtlMs: 10_000,
-    })).resolves.toEqual({
+    await expect(
+      getOrRefreshServerCache({
+        key: 'pool:1:1',
+        loader,
+        ttlMs: 1_000,
+        staleTtlMs: 10_000,
+      }),
+    ).resolves.toEqual({
       data: ['react'],
       state: 'fresh',
     })
@@ -30,12 +32,14 @@ describe('getOrRefreshServerCache', () => {
     vi.advanceTimersByTime(1_001)
     loader.mockRejectedValueOnce(new Error('npms down'))
 
-    await expect(getOrRefreshServerCache({
-      key: 'pool:1:1',
-      loader,
-      ttlMs: 1_000,
-      staleTtlMs: 10_000,
-    })).resolves.toEqual({
+    await expect(
+      getOrRefreshServerCache({
+        key: 'pool:1:1',
+        loader,
+        ttlMs: 1_000,
+        staleTtlMs: 10_000,
+      }),
+    ).resolves.toEqual({
       data: ['react'],
       state: 'stale',
     })
@@ -44,9 +48,10 @@ describe('getOrRefreshServerCache', () => {
   it('deduplicates concurrent refreshes for the same key', async () => {
     let resolveLoader: ((value: string[]) => void) | undefined
     const loader = vi.fn().mockImplementation(
-      () => new Promise<string[]>(resolve => {
-        resolveLoader = resolve
-      })
+      () =>
+        new Promise<string[]>((resolve) => {
+          resolveLoader = resolve
+        }),
     )
 
     const firstRequest = getOrRefreshServerCache({
@@ -87,9 +92,10 @@ describe('getOrRefreshServerCache', () => {
 
     let rejectLoader: ((error: Error) => void) | undefined
     const failingLoader = vi.fn().mockImplementation(
-      () => new Promise<string[]>((_, reject) => {
-        rejectLoader = reject
-      })
+      () =>
+        new Promise<string[]>((_, reject) => {
+          rejectLoader = reject
+        }),
     )
 
     const firstRequest = getOrRefreshServerCache({

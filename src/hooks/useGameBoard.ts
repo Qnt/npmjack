@@ -13,10 +13,7 @@ export function useGameBoard(initialRound?: Parameters<typeof useGame>[0]) {
     data: playerPackageInfo,
     isError: isPlayerPackageError,
     isLoading: isLoadingPlayer,
-  } = usePackageInfo(
-    game.playerDraw?.packageName ?? null,
-    game.playerDraw?.drawId,
-  )
+  } = usePackageInfo(game.playerDraw?.packageName ?? null, game.playerDraw?.drawId)
   const {
     data: dealerPackageInfo,
     isError: isDealerPackageError,
@@ -63,8 +60,8 @@ export function useGameBoard(initialRound?: Parameters<typeof useGame>[0]) {
       }
 
       const isNewPackage =
-        !game.dealerPackages.some(pkg => pkg.name === dealerPackageInfo.name) &&
-        !game.playerPackages.some(pkg => pkg.name === dealerPackageInfo.name)
+        !game.dealerPackages.some((pkg) => pkg.name === dealerPackageInfo.name) &&
+        !game.playerPackages.some((pkg) => pkg.name === dealerPackageInfo.name)
 
       if (isNewPackage) {
         game.handleDealerPackageLoaded(dealerPackageInfo)

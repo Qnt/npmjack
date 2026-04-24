@@ -106,8 +106,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
   const label = packageInfo.name.replace(/^@/, '').replace(/\//g, ' · ')
   const hasRepo = Boolean(packageInfo.repositoryUrl)
   const primaryHref =
-    packageInfo.repositoryUrl ??
-    `https://www.npmjs.com/package/${packageInfo.name}`
+    packageInfo.repositoryUrl ?? `https://www.npmjs.com/package/${packageInfo.name}`
   const Icon = hasRepo ? Github : NpmMark
   const containerRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -172,10 +171,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
           style={{ animation: 'npmjack-card-backdrop-in 180ms ease-out both' }}
         />
       ) : null}
-      <div
-        ref={containerRef}
-        className={cn('relative w-[9.5rem]', open && 'z-50')}
-      >
+      <div ref={containerRef} className={cn('relative w-[9.5rem]', open && 'z-50')}>
         <div
           ref={cardRef}
           aria-expanded={open}
@@ -186,12 +182,12 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
             tier.shadow,
             interactive && 'cursor-pointer',
             !open && interactive && 'hover:-translate-y-1',
-            open && '-translate-y-10'
+            open && '-translate-y-10',
           )}
           onClick={interactive ? onToggle : undefined}
           onKeyDown={
             interactive
-              ? e => {
+              ? (e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     onToggle?.()
@@ -200,13 +196,15 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
               : undefined
           }
           role={interactive ? 'button' : undefined}
-          style={{ animation: 'npmjack-card-reveal-flip 520ms cubic-bezier(0.2, 0.85, 0.25, 1) both' }}
+          style={{
+            animation: 'npmjack-card-reveal-flip 520ms cubic-bezier(0.2, 0.85, 0.25, 1) both',
+          }}
           tabIndex={interactive ? 0 : undefined}
         >
           <div
             className={cn(
               'flex items-start justify-between font-display text-[0.72rem] uppercase leading-none',
-              tier.text
+              tier.text,
             )}
           >
             <Icon className={cn('size-5', tier.accent)} />
@@ -217,7 +215,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
             <span
               className={cn(
                 'break-words text-center font-display text-[0.88rem] uppercase leading-[1.15] tracking-[0.04em]',
-                tier.text
+                tier.text,
               )}
               title={packageInfo.name}
             >
@@ -228,7 +226,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
           <div
             className={cn(
               'mt-auto flex items-end justify-between font-display text-[0.72rem] uppercase leading-none',
-              tier.text
+              tier.text,
             )}
           >
             <Icon className={cn('size-5 rotate-180', tier.accent)} />
@@ -264,7 +262,15 @@ interface PopoverProps {
   version: string
 }
 
-function PackageCardPopover({ author, description, href, hrefKind, name, tier, version }: PopoverProps) {
+function PackageCardPopover({
+  author,
+  description,
+  href,
+  hrefKind,
+  name,
+  tier,
+  version,
+}: PopoverProps) {
   const Icon = hrefKind === 'github' ? Github : NpmMark
   const linkLabel = hrefKind === 'github' ? 'GitHub' : 'npm'
   const boxRef = useRef<HTMLDivElement>(null)
@@ -291,14 +297,14 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
   return (
     <div
       className="absolute bottom-full left-1/2 z-10 mb-12 -translate-x-1/2"
-      onClick={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       <div
         ref={boxRef}
         className={cn(
           'relative w-[19rem] rounded-[20px] border bg-gradient-to-br from-[#fbf6e7] via-[#f5eed6] to-[#ede4c4] p-4 text-left',
           tier.popBorder,
-          tier.popShadow
+          tier.popShadow,
         )}
         role="dialog"
         style={{
@@ -316,7 +322,12 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
             >
               {name}
             </div>
-            <div className={cn('mt-1.5 font-display text-[0.6rem] uppercase leading-none tracking-[0.3em]', tier.accent)}>
+            <div
+              className={cn(
+                'mt-1.5 font-display text-[0.6rem] uppercase leading-none tracking-[0.3em]',
+                tier.accent,
+              )}
+            >
               v{version}
             </div>
           </div>
@@ -325,10 +336,10 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
             className={cn(
               'inline-flex size-9 shrink-0 items-center justify-center rounded-xl border bg-white/70 transition-colors hover:bg-white',
               tier.accentBorder,
-              tier.accent
+              tier.accent,
             )}
             href={href}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -337,7 +348,13 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
         </div>
 
         {description ? (
-          <p className={cn('relative mt-3 line-clamp-3 text-[0.8rem] leading-snug', tier.text, 'opacity-80')}>
+          <p
+            className={cn(
+              'relative mt-3 line-clamp-3 text-[0.8rem] leading-snug',
+              tier.text,
+              'opacity-80',
+            )}
+          >
             {description}
           </p>
         ) : null}
@@ -346,7 +363,7 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
           <div
             className={cn(
               'font-display text-[0.55rem] uppercase leading-none tracking-[0.32em]',
-              tier.accent
+              tier.accent,
             )}
           >
             Owner
@@ -356,12 +373,9 @@ function PackageCardPopover({ author, description, href, hrefKind, name, tier, v
             {author ? (
               author.url ? (
                 <a
-                  className={cn(
-                    'truncate text-[0.82rem] font-medium hover:underline',
-                    tier.text
-                  )}
+                  className={cn('truncate text-[0.82rem] font-medium hover:underline', tier.text)}
                   href={author.url}
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
@@ -399,14 +413,20 @@ export function PackageCardBack({
     <div
       className={cn(
         'relative flex aspect-[2/2.8] w-[9.5rem] shrink-0 flex-col items-center justify-center rounded-[18px] border-[3px] border-black/85 bg-[repeating-linear-gradient(135deg,#be2a2a_0,#be2a2a_10px,#911d1d_10px,#911d1d_20px)] text-white shadow-[0_2px_0_#3a0b0b,0_6px_14px_rgba(0,0,0,0.46)]',
-        className
+        className,
       )}
-      style={loading ? { animation: 'npmjack-card-loading-size 1.25s ease-in-out infinite' } : undefined}
+      style={
+        loading ? { animation: 'npmjack-card-loading-size 1.25s ease-in-out infinite' } : undefined
+      }
     >
       <div className="absolute inset-2 rounded-[13px] border-2 border-white/70" />
       <div className="relative z-10 flex flex-col items-center gap-2 text-center font-display uppercase">
-        <span className={cn('text-sm tracking-[0.25em] text-white/90', labelClassName)}>{label}</span>
-        {note ? <span className="text-[0.72rem] tracking-[0.3em] text-white/70">{note}</span> : null}
+        <span className={cn('text-sm tracking-[0.25em] text-white/90', labelClassName)}>
+          {label}
+        </span>
+        {note ? (
+          <span className="text-[0.72rem] tracking-[0.3em] text-white/70">{note}</span>
+        ) : null}
       </div>
     </div>
   )

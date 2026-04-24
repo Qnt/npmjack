@@ -156,7 +156,7 @@ describe('/api/packages GET', () => {
         code: 'UPSTREAM_TIMEOUT',
         retryable: true,
         type: 'popular',
-      })
+      }),
     )
   })
 
@@ -185,7 +185,7 @@ describe('/api/packages GET', () => {
         code: 'INVALID_UPSTREAM_PAYLOAD',
         retryable: false,
         type: 'trending',
-      })
+      }),
     )
   })
 })

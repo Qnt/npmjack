@@ -24,12 +24,12 @@ export const Route = createFileRoute('/api/packages')({
             const { data: packages } = await getCachedPackageSource('popular', limit)
             return Response.json({ packages })
           }
-           
+
           if (type === 'trending') {
             const { data: packages } = await getCachedPackageSource('trending', limit)
             return Response.json({ packages })
           }
-          
+
           if (type === 'pool') {
             const popularLimit = parseLimit(url.searchParams.get('popularLimit'), 200, 1, 250)
             const trendingLimit = parseLimit(url.searchParams.get('trendingLimit'), 100, 1, 250)
@@ -39,10 +39,7 @@ export const Route = createFileRoute('/api/packages')({
             return Response.json({ packages })
           }
 
-          return Response.json(
-            createApiErrorResponse('INVALID_TYPE'),
-            { status: 400 }
-          )
+          return Response.json(createApiErrorResponse('INVALID_TYPE'), { status: 400 })
         } catch (error) {
           const code = mapPackagesErrorCode(error)
           logPackagesRouteError({
@@ -50,10 +47,7 @@ export const Route = createFileRoute('/api/packages')({
             retryable: createApiErrorResponse(code).retryable,
             type,
           })
-          return Response.json(
-            createApiErrorResponse(code),
-            { status: 500 }
-          )
+          return Response.json(createApiErrorResponse(code), { status: 500 })
         }
       },
     },
@@ -112,9 +106,7 @@ async function getCachedPackagePool(popularLimit: number, trendingLimit: number)
 
 function mapPackagesErrorCode(error: unknown) {
   const serverError =
-    error instanceof ServerFetchError || isServerFetchLikeError(error)
-      ? error
-      : null
+    error instanceof ServerFetchError || isServerFetchLikeError(error) ? error : null
 
   if (serverError) {
     if (serverError.code === 'TIMEOUT') {
@@ -132,12 +124,7 @@ function mapPackagesErrorCode(error: unknown) {
 function isServerFetchLikeError(
   error: unknown,
 ): error is Pick<ServerFetchError, 'code' | 'retryable'> {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'retryable' in error
-  )
+  return typeof error === 'object' && error !== null && 'code' in error && 'retryable' in error
 }
 
 export function parseLimit(

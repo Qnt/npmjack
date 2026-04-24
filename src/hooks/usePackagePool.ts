@@ -20,7 +20,7 @@ export async function fetchPackagePool(): Promise<string[]> {
     throw await createPackagePoolError(response)
   }
 
-  const data = await response.json() as { packages: string[] }
+  const data = (await response.json()) as { packages: string[] }
   return data.packages
 }
 
@@ -39,7 +39,7 @@ export function usePackagePool() {
     queryKey: ['packagePool'],
     queryFn: fetchPackagePool,
     staleTime: 10 * 60 * 1000,
-    gcTime: 30* 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: createPackagePoolRetryPolicy(),
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -50,7 +50,7 @@ async function createPackagePoolError(response: Response) {
   const fallback = new PackagePoolError('Failed to fetch package pool', 'UNKNOWN', true)
 
   try {
-    const data = await response.json() as Partial<ApiErrorResponse>
+    const data = (await response.json()) as Partial<ApiErrorResponse>
     if (
       typeof data.error === 'string' &&
       typeof data.code === 'string' &&

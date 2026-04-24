@@ -18,7 +18,11 @@ function GameRoute() {
   return <GameScreen initialRound={initialRound} />
 }
 
-export function GameScreen({ initialRound }: { initialRound: ReturnType<typeof createInitialRound> }) {
+export function GameScreen({
+  initialRound,
+}: {
+  initialRound: ReturnType<typeof createInitialRound>
+}) {
   const {
     game,
     handleRetryDeck,
@@ -66,9 +70,7 @@ function PackagePoolError({ onRetry }: { onRetry: () => void }) {
   return (
     <Alert className="mb-4 border-rose-400/25 bg-rose-500/10 text-rose-50">
       <AlertCircle className="size-4" />
-      <AlertTitle className="font-display uppercase tracking-[0.18em]">
-        Deck unavailable
-      </AlertTitle>
+      <AlertTitle className="font-display uppercase tracking-[0.18em]">Deck unavailable</AlertTitle>
       <AlertDescription className="flex items-center justify-between gap-4 text-rose-100/80">
         <span>Couldn&apos;t load the package pool. Start a fresh round to retry.</span>
         <button

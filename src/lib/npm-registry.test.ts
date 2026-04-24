@@ -45,7 +45,7 @@ describe('fetchPackageInfo', () => {
       expect.objectContaining({
         code: 'INVALID_PAYLOAD',
         retryable: false,
-      })
+      }),
     )
   })
 
@@ -60,7 +60,7 @@ describe('fetchPackageInfo', () => {
       expect.objectContaining({
         code: 'INVALID_PAYLOAD',
         retryable: false,
-      })
+      }),
     )
   })
 })

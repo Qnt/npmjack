@@ -11,12 +11,7 @@ interface GameStatusProps {
   targetMB: number
 }
 
-export function GameStatus({
-  status,
-  playerTotalMB,
-  dealerTotalMB,
-  targetMB,
-}: GameStatusProps) {
+export function GameStatus({ status, playerTotalMB, dealerTotalMB, targetMB }: GameStatusProps) {
   const content = getStatusContent(status, playerTotalMB, dealerTotalMB, targetMB)
   if (!content) return null
 
@@ -26,7 +21,7 @@ export function GameStatus({
     <div
       className={cn(
         'relative flex items-center gap-3 rounded-[18px] border-[3px] bg-gradient-to-b p-3 font-display uppercase shadow-[0_6px_0_rgba(0,0,0,0.5)]',
-        content.className
+        content.className,
       )}
     >
       <span className="flex size-10 items-center justify-center rounded-xl border-2 border-black/70 bg-black/30">

@@ -24,7 +24,7 @@ describe('fetchJsonWithTimeout', () => {
       expect.objectContaining<Partial<ServerFetchError>>({
         code: 'TIMEOUT',
         retryable: true,
-      })
+      }),
     )
   })
 })

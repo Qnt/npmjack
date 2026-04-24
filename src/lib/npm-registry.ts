@@ -103,12 +103,14 @@ export async function fetchPackageInfo(packageName: string): Promise<PackageInfo
     )
   }
 
-  const repoUrl = normalizeRepositoryUrl(
-    versionData.repository?.url || packument.repository?.url,
-  )
+  const repoUrl = normalizeRepositoryUrl(versionData.repository?.url || packument.repository?.url)
 
   const author = normalizeAuthor(
-    versionData.author ?? packument.author ?? versionData._npmUser ?? versionData.maintainers?.[0] ?? packument.maintainers?.[0],
+    versionData.author ??
+      packument.author ??
+      versionData._npmUser ??
+      versionData.maintainers?.[0] ??
+      packument.maintainers?.[0],
   )
 
   return {

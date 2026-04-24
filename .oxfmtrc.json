@@ -1,0 +1,8 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "printWidth": 100,
+  "sortPackageJson": false,
+  "ignorePatterns": ["dist", ".nitro", ".tanstack", "node_modules", "src/routeTree.gen.ts"]
+}

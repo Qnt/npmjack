@@ -47,16 +47,16 @@ export async function fetchPopularPackages(limit: number): Promise<string[]> {
 
   assertNpmsSearchResponse(response)
 
-  return response.results.map(r => r.package.name)
+  return response.results.map((r) => r.package.name)
 }
 
 export async function fetchTrendingPackages(limit: number): Promise<string[]> {
   const batchSize = 250
   const allPackages: { name: string; acceleration: number }[] = []
-  
+
   let from = 0
   let hasMore = true
-  
+
   while (hasMore && allPackages.length < limit * 3) {
     const response = await fetchJsonWithTimeout<NpmsSearchResponse>(`${NPMS_API}/search`, {
       query: {
@@ -73,8 +73,8 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
       break
     }
 
-    const packageNames = response.results.map(r => r.package.name)
-    
+    const packageNames = response.results.map((r) => r.package.name)
+
     const scoresData = await fetchJsonWithTimeout<Record<string, NpmsPackageScore>>(
       `${NPMS_API}/package/mget`,
       {
@@ -83,7 +83,7 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
           'Content-Type': 'application/json',
         },
         body: packageNames,
-      }
+      },
     ).catch(() => null)
 
     if (!scoresData) {
@@ -109,7 +109,7 @@ export async function fetchTrendingPackages(limit: number): Promise<string[]> {
   const sorted = allPackages
     .sort((a, b) => b.acceleration - a.acceleration)
     .slice(0, limit)
-    .map(p => p.name)
+    .map((p) => p.name)
 
   return sorted
 }

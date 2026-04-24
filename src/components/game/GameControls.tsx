@@ -42,7 +42,7 @@ function PressButton({
           'transition-transform duration-[60ms] ease-linear',
           'active:translate-y-[4px]',
           'disabled:pointer-events-none disabled:opacity-50',
-          className
+          className,
         )}
       >
         {children}

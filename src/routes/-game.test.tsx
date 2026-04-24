@@ -23,13 +23,18 @@ afterEach(() => {
   mockUseGameBoard.mockReset()
 })
 
+type InitialRoundLoader = () => {
+  dealerTargetMB: number
+  targetMB: number
+}
+
 describe('/game route', () => {
   it('loads a randomized initial round snapshot', () => {
-    const randomSpy = vi.spyOn(Math, 'random')
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.4)
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValueOnce(0.2).mockReturnValueOnce(0.4)
 
-    expect(Route.options.loader?.({} as never)).toEqual({
+    const loader = Route.options.loader as InitialRoundLoader | undefined
+
+    expect(loader?.()).toEqual({
       dealerTargetMB: 1.148,
       targetMB: 1.4,
     })

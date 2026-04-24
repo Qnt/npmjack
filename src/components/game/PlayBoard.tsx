@@ -187,7 +187,7 @@ function HandLane({ drawing, packages }: HandLaneProps) {
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const ro = new ResizeObserver(entries => {
+    const ro = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? el.clientWidth
       setContainerPx(width)
     })
@@ -228,7 +228,10 @@ function HandLane({ drawing, packages }: HandLaneProps) {
         {drawing && (
           <div
             className="absolute top-0 transition-all duration-300"
-            style={{ left: `${startLeftRem + packages.length * peek}rem`, zIndex: packages.length + 1 }}
+            style={{
+              left: `${startLeftRem + packages.length * peek}rem`,
+              zIndex: packages.length + 1,
+            }}
           >
             <PackageCardBack label="drawing" note="..." loading />
           </div>
