@@ -1,6 +1,5 @@
 import { RefreshCw, Shield } from 'lucide-react'
 
-import { Spinner } from '#/components/ui/spinner'
 import { cn } from '#/lib/utils'
 
 import type { GameStatus } from '#/hooks/useGame'
@@ -18,12 +17,14 @@ function PressButton({
   onClick,
   disabled,
   shadowColor,
+  shimmer,
   className,
   children,
 }: {
   onClick?: () => void
   disabled?: boolean
   shadowColor: string
+  shimmer?: boolean
   className: string
   children: React.ReactNode
 }) {
@@ -45,6 +46,18 @@ function PressButton({
           className,
         )}
       >
+        {shimmer && disabled && (
+          <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[10px]">
+            <span
+              className="absolute inset-y-0 left-0 w-1/2"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)',
+                animation: 'npmjack-btn-shimmer 1.4s ease-in-out infinite',
+              }}
+            />
+          </span>
+        )}
         {children}
       </button>
     </div>
@@ -80,9 +93,9 @@ export function GameControls({
           onClick={onHit}
           disabled={isLoading}
           shadowColor="#4a0f12"
+          shimmer
           className="bg-gradient-to-b from-rose-500 to-rose-700 px-6 py-3 text-[0.82rem] sm:text-[0.92rem] text-white"
         >
-          {isLoading && <Spinner className="size-4" />}
           Hit
         </PressButton>
       </div>

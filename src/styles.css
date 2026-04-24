@@ -320,6 +320,15 @@ body {
   }
 }
 
+@keyframes npmjack-btn-shimmer {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
