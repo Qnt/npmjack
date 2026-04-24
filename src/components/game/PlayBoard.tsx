@@ -154,7 +154,7 @@ function DeckStack({ active }: { active: boolean }) {
           active && '-translate-y-1 rotate-[-2deg]',
         )}
       >
-        <PackageCardBack label="npm" note={active ? 'dealing' : 'deck'} />
+        <PackageCardBack label="npm" note="deck" />
       </div>
     </div>
   )
