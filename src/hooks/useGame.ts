@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-import { usePackagePool } from '#/hooks/usePackagePool'
 import type { PackageInfo } from '#/lib/npm-registry'
 
-export type GameStatus = 'idle' | 'playing' | 'dealerTurn' | 'won' | 'lost' | 'bust' | 'dealerBust'
+export type GameStatus = 'playing' | 'dealerTurn' | 'won' | 'lost' | 'bust' | 'dealerBust'
 
 export interface PlayerDraw {
   packageName: string
@@ -33,6 +32,21 @@ function generateDealerTargetMB(targetMB: number): number {
 
 function bytesToMB(bytes: number): number {
   return bytes / (1024 * 1024)
+}
+
+function createNewGameState(): GameState {
+  const targetMB = generateTargetMB()
+
+  return {
+    targetMB,
+    dealerTargetMB: generateDealerTargetMB(targetMB),
+    playerTotalBytes: 0,
+    dealerTotalBytes: 0,
+    playerPackages: [],
+    dealerPackages: [],
+    status: 'playing',
+    playerDraw: null,
+  }
 }
 
 export function resolveRoundOutcome(
@@ -106,18 +120,7 @@ export function finalizeDealerTurn(state: GameState): GameState {
 }
 
 export function useGame() {
-  const packagePoolQuery = usePackagePool()
-  
-  const [gameState, setGameState] = useState<GameState>({
-    targetMB: generateTargetMB(),
-    dealerTargetMB: 0,
-    playerTotalBytes: 0,
-    dealerTotalBytes: 0,
-    playerPackages: [],
-    dealerPackages: [],
-    status: 'idle',
-    playerDraw: null,
-  })
+  const [gameState, setGameState] = useState<GameState>(createNewGameState)
 
   const dealerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dealerPauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -130,24 +133,19 @@ export function useGame() {
   const drawIdRef = useRef(0)
   const packagePoolRef = useRef<string[]>([])
 
-  if (packagePoolQuery.data && packagePoolRef.current !== packagePoolQuery.data) {
-    packagePoolRef.current = packagePoolQuery.data
-  }
+  useEffect(() => {
+    packagePoolRef.current = []
+  }, [])
+
+  const setPackagePool = useCallback((packagePool: string[] | undefined) => {
+    packagePoolRef.current = packagePool ?? []
+  }, [])
 
   const startGame = useCallback(() => {
-    const targetMB = generateTargetMB()
     usedPackageNamesRef.current = new Set()
+    noSizePackageNamesRef.current = new Set()
     skippedPackageNamesRef.current = new Set()
-    setGameState({
-      targetMB,
-      dealerTargetMB: generateDealerTargetMB(targetMB),
-      playerTotalBytes: 0,
-      dealerTotalBytes: 0,
-      playerPackages: [],
-      dealerPackages: [],
-      status: 'playing',
-      playerDraw: null,
-    })
+    setGameState(createNewGameState())
     pendingDealerPackageRef.current = null
     dealerPausingRef.current = false
     if (dealerPauseTimeoutRef.current) {
@@ -254,8 +252,8 @@ export function useGame() {
     setGameState(prev => finalizeDealerTurn(prev))
   }, [])
 
-  const rejectPlayerPackage = useCallback((packageName: string) => {
-    noSizePackageNamesRef.current.add(packageName)
+  const replacePlayerDraw = useCallback((packageName: string, excludedPackages: Set<string>) => {
+    excludedPackages.add(packageName)
 
     setGameState(prev => {
       if (!prev.playerDraw || prev.playerDraw.packageName !== packageName) {
@@ -277,48 +275,31 @@ export function useGame() {
       }
     })
   }, [getNextPackage])
+
+  const clearPendingDealerPackage = useCallback((packageName: string, excludedPackages: Set<string>) => {
+    excludedPackages.add(packageName)
+
+    if (pendingDealerPackageRef.current === packageName) {
+      pendingDealerPackageRef.current = null
+    }
+    setDealerPackageName(current => (current === packageName ? null : current))
+  }, [])
+
+  const rejectPlayerPackage = useCallback((packageName: string) => {
+    replacePlayerDraw(packageName, noSizePackageNamesRef.current)
+  }, [replacePlayerDraw])
 
   const rejectDealerPackage = useCallback((packageName: string) => {
-    noSizePackageNamesRef.current.add(packageName)
-
-    if (pendingDealerPackageRef.current === packageName) {
-      pendingDealerPackageRef.current = null
-    }
-    setDealerPackageName(current => (current === packageName ? null : current))
-  }, [])
+    clearPendingDealerPackage(packageName, noSizePackageNamesRef.current)
+  }, [clearPendingDealerPackage])
 
   const skipPlayerPackage = useCallback((packageName: string) => {
-    skippedPackageNamesRef.current.add(packageName)
-
-    setGameState(prev => {
-      if (!prev.playerDraw || prev.playerDraw.packageName !== packageName) {
-        return prev
-      }
-
-      const nextPackageName = getNextPackage()
-      if (!nextPackageName) {
-        return {
-          ...prev,
-          playerDraw: null,
-        }
-      }
-
-      const drawId = ++drawIdRef.current
-      return {
-        ...prev,
-        playerDraw: { packageName: nextPackageName, drawId },
-      }
-    })
-  }, [getNextPackage])
+    replacePlayerDraw(packageName, skippedPackageNamesRef.current)
+  }, [replacePlayerDraw])
 
   const skipDealerPackage = useCallback((packageName: string) => {
-    skippedPackageNamesRef.current.add(packageName)
-
-    if (pendingDealerPackageRef.current === packageName) {
-      pendingDealerPackageRef.current = null
-    }
-    setDealerPackageName(current => (current === packageName ? null : current))
-  }, [])
+    clearPendingDealerPackage(packageName, skippedPackageNamesRef.current)
+  }, [clearPendingDealerPackage])
 
   useEffect(() => {
     if (gameState.status === 'dealerTurn') {
@@ -375,6 +356,7 @@ export function useGame() {
     rejectDealerPackage,
     skipPlayerPackage,
     skipDealerPackage,
+    setPackagePool,
     dealerPackageName,
     handleDealerPackageLoaded,
   }

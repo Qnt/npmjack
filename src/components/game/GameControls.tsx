@@ -1,4 +1,4 @@
-import { Dice5, RefreshCw, Shield } from 'lucide-react'
+import { RefreshCw, Shield } from 'lucide-react'
 
 import { Spinner } from '#/components/ui/spinner'
 import { cn } from '#/lib/utils'
@@ -61,19 +61,6 @@ export function GameControls({
 }: GameControlsProps) {
   const isGameOver =
     status === 'won' || status === 'lost' || status === 'bust' || status === 'dealerBust'
-
-  if (status === 'idle') {
-    return (
-      <PressButton
-        onClick={onNewGame}
-        shadowColor="#4a0f12"
-        className="bg-gradient-to-b from-rose-500 to-rose-700 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-white"
-      >
-        <Dice5 className="size-4" />
-        Deal
-      </PressButton>
-    )
-  }
 
   if (status === 'playing') {
     return (

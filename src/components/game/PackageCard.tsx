@@ -411,11 +411,3 @@ export function PackageCardBack({
     </div>
   )
 }
-
-export function PackageCardSlot({ label }: { label: string }) {
-  return (
-    <div className="flex aspect-[2/2.8] w-[9.5rem] shrink-0 items-center justify-center rounded-[18px] border-2 border-dashed border-white/25 bg-white/4 text-center font-display text-[0.72rem] uppercase tracking-[0.3em] text-white/55">
-      {label}
-    </div>
-  )
-}
