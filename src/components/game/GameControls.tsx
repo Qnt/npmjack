@@ -1,5 +1,3 @@
-import { RefreshCw } from 'lucide-react'
-
 import { cn } from '#/lib/utils'
 
 import type { GameStatus } from '#/hooks/useGame'
@@ -108,7 +106,6 @@ export function GameControls({
         shadowColor="#0a3b25"
         className="bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-emerald-950 hover:from-emerald-300 hover:to-emerald-500"
       >
-        <RefreshCw aria-hidden="true" className="size-4" />
         New Round
       </PressButton>
     )

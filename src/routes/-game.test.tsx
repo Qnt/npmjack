@@ -1,13 +1,9 @@
 // @vitest-environment jsdom
 
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mockUseGameBoard = vi.fn()
-
-vi.mock('#/components/game/FeltOverlay', () => ({
-  FeltOverlay: () => <div data-testid="felt-overlay" />,
-}))
 
 vi.mock('#/components/game/PlayBoard', () => ({
   PlayBoard: () => <div data-testid="play-board" />,
@@ -71,5 +67,42 @@ describe('/game route', () => {
     render(<GameScreen initialRound={initialRound} />)
 
     expect(mockUseGameBoard).toHaveBeenCalledWith(initialRound)
+  })
+
+  it('renders retry banner and retries the deck when package pool fails', () => {
+    const handleRetryDeck = vi.fn()
+
+    mockUseGameBoard.mockReturnValue({
+      game: {
+        dealerPackages: [],
+        dealerTotalMB: 0,
+        drawPlayerPackage: vi.fn(),
+        playerPackages: [],
+        playerTotalMB: 0,
+        stand: vi.fn(),
+        status: 'playing',
+        targetMB: 1.8,
+      },
+      handleRetryDeck,
+      handleStartGame: vi.fn(),
+      isDeckReady: false,
+      isLoadingDealer: false,
+      isLoadingDeck: false,
+      isLoadingPlayer: false,
+      packagePoolError: true,
+    })
+
+    render(
+      <GameScreen
+        initialRound={{
+          dealerTargetMB: 1.4,
+          targetMB: 1.8,
+        }}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /retry deck/i }))
+    expect(handleRetryDeck).toHaveBeenCalledTimes(1)
   })
 })
