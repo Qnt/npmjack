@@ -237,7 +237,7 @@ function HandLane({ drawing, packages, direction = 'up' }: HandLaneProps) {
               zIndex: packages.length + 1,
             }}
           >
-            <PackageCardBack label="drawing" note="..." loading />
+            <PackageCardBack label="drawing" note="…" loading />
           </div>
         )}
       </div>

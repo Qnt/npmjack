@@ -110,7 +110,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
     packageInfo.repositoryUrl ?? `https://www.npmjs.com/package/${packageInfo.name}`
   const Icon = hasRepo ? Github : NpmMark
   const containerRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLButtonElement>(null)
   const [popoverReady, setPopoverReady] = useState(false)
 
   useEffect(() => {
@@ -173,12 +173,12 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
         />
       ) : null}
       <div ref={containerRef} className={cn('relative w-[9.5rem]', open && 'z-50')}>
-        <div
+        <button
           ref={cardRef}
           aria-expanded={open}
           aria-label={`Package ${packageInfo.name}`}
           className={cn(
-            'relative flex aspect-[2/2.8] w-[9.5rem] shrink-0 flex-col rounded-[18px] border-[3px] border-black/85 bg-gradient-to-br p-3 transition-transform duration-200',
+            'relative flex aspect-[2/2.8] w-[9.5rem] shrink-0 flex-col rounded-[18px] border-[3px] border-black/85 bg-gradient-to-br p-3 text-left transition-transform duration-200',
             tier.body,
             tier.shadow,
             interactive && 'cursor-pointer',
@@ -186,21 +186,10 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
             open && (direction === 'down' ? 'translate-y-10' : '-translate-y-10'),
           )}
           onClick={interactive ? onToggle : undefined}
-          onKeyDown={
-            interactive
-              ? (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onToggle?.()
-                  }
-                }
-              : undefined
-          }
-          role={interactive ? 'button' : undefined}
           style={{
             animation: 'npmjack-card-reveal-flip 520ms cubic-bezier(0.2, 0.85, 0.25, 1) both',
           }}
-          tabIndex={interactive ? 0 : undefined}
+          type="button"
         >
           <div
             className={cn(
@@ -208,7 +197,7 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
               tier.text,
             )}
           >
-            <Icon className={cn('size-5', tier.accent)} />
+            <Icon aria-hidden="true" className={cn('size-5', tier.accent)} />
             <span className={cn('tracking-[0.2em] text-[0.6rem]', tier.accent)}>{tier.label}</span>
           </div>
 
@@ -230,21 +219,22 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
               tier.text,
             )}
           >
-            <Icon className={cn('size-5 rotate-180', tier.accent)} />
+            <Icon aria-hidden="true" className={cn('size-5 rotate-180', tier.accent)} />
             <span className="text-right text-[0.9rem]">{formatSize(packageInfo.unpackedSize)}</span>
           </div>
 
           <div className="pointer-events-none absolute inset-0 rounded-[15px] ring-1 ring-inset ring-white/70" />
-        </div>
+        </button>
 
         {open && popoverReady ? (
           <PackageCardPopover
+            author={packageInfo.author}
+            description={packageInfo.description}
             direction={direction}
             href={primaryHref}
             hrefKind={hasRepo ? 'github' : 'npm'}
             name={packageInfo.name}
             tier={tier}
-            unpackedSize={packageInfo.unpackedSize}
             version={packageInfo.version}
           />
         ) : null}
@@ -254,22 +244,24 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
 }
 
 interface PopoverProps {
+  author: PackageInfo['author']
+  description: PackageInfo['description']
   direction: 'up' | 'down'
   href: string
   hrefKind: 'github' | 'npm'
   name: string
   tier: Tier
-  unpackedSize: number | null
   version: string
 }
 
 function PackageCardPopover({
+  author,
+  description,
   direction,
   href,
   hrefKind,
   name,
   tier,
-  unpackedSize,
   version,
 }: PopoverProps) {
   const Icon = hrefKind === 'github' ? Github : NpmMark
@@ -301,14 +293,14 @@ function PackageCardPopover({
     <div
       className={cn(
         'absolute left-1/2 z-10 -translate-x-1/2',
-        isUp ? 'bottom-full mb-12' : 'top-full mt-3',
+        isUp ? 'bottom-full mb-12' : 'top-full mt-14',
       )}
       onClick={(e) => e.stopPropagation()}
     >
       <div
         ref={boxRef}
         className={cn(
-          'relative w-[16rem] rounded-[18px] border-[3px] border-black/80 bg-gradient-to-br from-white via-white to-stone-100 p-3.5 text-left',
+          'relative w-[16rem] rounded-[18px] border-2 border-black/80 bg-gradient-to-br from-stone-50 via-white to-stone-100 p-3.5 text-left',
           tier.popShadow,
         )}
         role="dialog"
@@ -317,36 +309,47 @@ function PackageCardPopover({
           transform: `translateX(${shiftX}px)`,
         }}
       >
-        <div className="pointer-events-none absolute inset-2 rounded-[13px] ring-1 ring-inset ring-black/10" />
-
         <div className="relative flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div
-              className="truncate font-display text-[0.85rem] leading-none tracking-[0.04em]"
+              className={cn(
+                'truncate font-display text-[0.85rem] leading-none tracking-[0.04em]',
+                tier.text,
+              )}
               title={name}
             >
               {name}
             </div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="font-display text-[0.6rem] leading-none tracking-[0.2em] opacity-40">
-                v{version}
-              </span>
-              <span className="h-2 w-px bg-black/10" />
+            <div className="mt-1 flex flex-wrap items-center gap-1">
               <span
                 className={cn(
-                  'font-display text-[0.6rem] uppercase leading-none tracking-[0.2em]',
-                  tier.accent,
+                  'font-display text-[0.62rem] leading-none tracking-[0.2em] opacity-65',
+                  tier.text,
                 )}
               >
-                {tier.label}
+                v{version}
               </span>
+              {author ? (
+                <>
+                  <span className={cn('font-display text-[0.62rem] leading-none opacity-40', tier.text)}>
+                    /
+                  </span>
+                  <span
+                    className={cn(
+                      'font-display text-[0.62rem] leading-none tracking-[0.1em] opacity-65',
+                      tier.text,
+                    )}
+                  >
+                    {author.name}
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
           <a
             aria-label={`Open on ${linkLabel}`}
             className={cn(
-              'inline-flex size-8 shrink-0 items-center justify-center rounded-lg border bg-white/70 transition-colors hover:bg-white',
-              tier.accentBorder,
+              'inline-flex size-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/50',
               tier.accent,
             )}
             href={href}
@@ -358,14 +361,16 @@ function PackageCardPopover({
           </a>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-[0.55rem] uppercase leading-none tracking-[0.2em] opacity-40">
-            unpacked
-          </span>
-          <span className="font-display text-[1.05rem] leading-none tracking-[0.08em] tabular-nums">
-            {formatSize(unpackedSize)}
-          </span>
-        </div>
+        {description ? (
+          <p
+            className={cn(
+              'mt-2 line-clamp-3 text-[0.72rem] leading-relaxed opacity-80',
+              tier.text,
+            )}
+          >
+            {description}
+          </p>
+        ) : null}
       </div>
     </div>
   )

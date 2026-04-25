@@ -329,6 +329,24 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  @keyframes npmjack-card-reveal-flip {
+    from, to { opacity: 1; transform: none; }
+  }
+  @keyframes npmjack-card-popover-in {
+    from, to { opacity: 1; }
+  }
+  @keyframes npmjack-card-backdrop-in {
+    from, to { opacity: 1; }
+  }
+  @keyframes npmjack-btn-shimmer {
+    from, to { transform: none; }
+  }
+  @keyframes npmjack-card-loading-size {
+    from, to { transform: none; }
+  }
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-display);

@@ -39,7 +39,7 @@ function getStatusContent(
 ) {
   if (status === 'bust') {
     return {
-      description: `${targetMB.toFixed(2)} MB + ${(playerTotalMB - targetMB).toFixed(2)} MB`,
+      description: `${targetMB.toFixed(2)}\u00A0MB + ${(playerTotalMB - targetMB).toFixed(2)}\u00A0MB`,
       gradient:
         'repeating-linear-gradient(135deg,#be2a2a_0,#be2a2a_10px,#911d1d_10px,#911d1d_20px)',
       title: 'Bust',
@@ -47,7 +47,7 @@ function getStatusContent(
   }
   if (status === 'dealerBust') {
     return {
-      description: `${targetMB.toFixed(2)} MB + ${(dealerTotalMB - targetMB).toFixed(2)} MB`,
+      description: `${targetMB.toFixed(2)}\u00A0MB + ${(dealerTotalMB - targetMB).toFixed(2)}\u00A0MB`,
       gradient:
         'repeating-linear-gradient(135deg,#10b981_0,#10b981_10px,#059669_10px,#059669_20px)',
       title: 'House Bust',
@@ -55,7 +55,7 @@ function getStatusContent(
   }
   if (status === 'won') {
     return {
-      description: `${playerTotalMB.toFixed(2)} MB / ${targetMB.toFixed(2)} MB`,
+      description: `${playerTotalMB.toFixed(2)}\u00A0MB / ${targetMB.toFixed(2)}\u00A0MB`,
       gradient:
         'repeating-linear-gradient(135deg,#f59e0b_0,#f59e0b_10px,#d97706_10px,#d97706_20px)',
       title: 'Won',
@@ -63,7 +63,7 @@ function getStatusContent(
   }
   if (status === 'lost') {
     return {
-      description: `${playerTotalMB.toFixed(2)} MB / ${targetMB.toFixed(2)} MB`,
+      description: `${playerTotalMB.toFixed(2)}\u00A0MB / ${targetMB.toFixed(2)}\u00A0MB`,
       gradient:
         'repeating-linear-gradient(135deg,#f97316_0,#f97316_10px,#ea580c_10px,#ea580c_20px)',
       title: 'Lost',

@@ -83,7 +83,7 @@ export function GameControls({
             onClick={onStand}
             disabled={isLoading}
             shadowColor="#7a2a07"
-            className="bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2 text-[0.72rem] sm:text-[0.82rem] text-orange-950"
+            className="bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2 text-[0.72rem] sm:text-[0.82rem] text-orange-950 hover:from-orange-300 hover:to-orange-500"
           >
             Stand
           </PressButton>
@@ -93,7 +93,7 @@ export function GameControls({
           disabled={isLoading}
           shadowColor="#4a0f12"
           shimmer
-          className="bg-gradient-to-b from-rose-500 to-rose-700 px-6 py-3 text-[0.82rem] sm:text-[0.92rem] text-white"
+          className="bg-gradient-to-b from-rose-500 to-rose-700 px-6 py-3 text-[0.82rem] sm:text-[0.92rem] text-white hover:from-rose-400 hover:to-rose-600"
         >
           Hit
         </PressButton>
@@ -106,9 +106,9 @@ export function GameControls({
       <PressButton
         onClick={onNewGame}
         shadowColor="#0a3b25"
-        className="bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-emerald-950"
+        className="bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2.5 text-[0.75rem] sm:text-[0.85rem] text-emerald-950 hover:from-emerald-300 hover:to-emerald-500"
       >
-        <RefreshCw className="size-4" />
+        <RefreshCw aria-hidden="true" className="size-4" />
         New Round
       </PressButton>
     )
