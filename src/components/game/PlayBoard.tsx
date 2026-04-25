@@ -43,7 +43,7 @@ export function PlayBoard({
         <HandLane drawing={dealerDrawing} packages={dealerPackages} />
       </div>
 
-      {status === 'playing' && (
+      {(status === 'playing' || status === 'dealerTurn') && (
         <CenterBar
           dealerTotalMB={dealerTotalMB}
           playerTotalMB={playerTotalMB}
