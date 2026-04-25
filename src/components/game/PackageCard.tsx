@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Github, Package as PackageIcon } from 'lucide-react'
+import { Github } from 'lucide-react'
 
 import { cn } from '#/lib/utils'
 import { formatSize } from '#/lib/npm-registry'
@@ -239,12 +239,12 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
 
         {open && popoverReady ? (
           <PackageCardPopover
-            author={packageInfo.author}
-            description={packageInfo.description}
+            direction={direction}
             href={primaryHref}
             hrefKind={hasRepo ? 'github' : 'npm'}
             name={packageInfo.name}
             tier={tier}
+            unpackedSize={packageInfo.unpackedSize}
             version={packageInfo.version}
           />
         ) : null}
@@ -254,22 +254,22 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose, dire
 }
 
 interface PopoverProps {
-  author: PackageInfo['author']
-  description: string | null
+  direction: 'up' | 'down'
   href: string
   hrefKind: 'github' | 'npm'
   name: string
   tier: Tier
+  unpackedSize: number | null
   version: string
 }
 
 function PackageCardPopover({
-  author,
-  description,
+  direction,
   href,
   hrefKind,
   name,
   tier,
+  unpackedSize,
   version,
 }: PopoverProps) {
   const Icon = hrefKind === 'github' ? Github : NpmMark
@@ -295,16 +295,20 @@ function PackageCardPopover({
     return () => window.removeEventListener('resize', adjust)
   }, [])
 
+  const isUp = direction === 'up'
+
   return (
     <div
-      className="absolute bottom-full left-1/2 z-10 mb-12 -translate-x-1/2"
+      className={cn(
+        'absolute left-1/2 z-10 -translate-x-1/2',
+        isUp ? 'bottom-full mb-12' : 'top-full mt-3',
+      )}
       onClick={(e) => e.stopPropagation()}
     >
       <div
         ref={boxRef}
         className={cn(
-          'relative w-[19rem] rounded-[20px] border bg-gradient-to-br from-[#fbf6e7] via-[#f5eed6] to-[#ede4c4] p-4 text-left',
-          tier.popBorder,
+          'relative w-[16rem] rounded-[18px] border-[3px] border-black/80 bg-gradient-to-br from-white via-white to-stone-100 p-3.5 text-left',
           tier.popShadow,
         )}
         role="dialog"
@@ -313,29 +317,35 @@ function PackageCardPopover({
           transform: `translateX(${shiftX}px)`,
         }}
       >
-        <div className="pointer-events-none absolute inset-0 rounded-[17px] ring-1 ring-inset ring-white/60" />
+        <div className="pointer-events-none absolute inset-2 rounded-[13px] ring-1 ring-inset ring-black/10" />
 
-        <div className="relative flex items-start justify-between gap-3">
+        <div className="relative flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div
-              className={cn('truncate font-display text-[0.95rem] leading-none', tier.text)}
+              className="truncate font-display text-[0.85rem] leading-none tracking-[0.04em]"
               title={name}
             >
               {name}
             </div>
-            <div
-              className={cn(
-                'mt-1.5 font-display text-[0.6rem] uppercase leading-none tracking-[0.3em]',
-                tier.accent,
-              )}
-            >
-              v{version}
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="font-display text-[0.6rem] leading-none tracking-[0.2em] opacity-40">
+                v{version}
+              </span>
+              <span className="h-2 w-px bg-black/10" />
+              <span
+                className={cn(
+                  'font-display text-[0.6rem] uppercase leading-none tracking-[0.2em]',
+                  tier.accent,
+                )}
+              >
+                {tier.label}
+              </span>
             </div>
           </div>
           <a
             aria-label={`Open on ${linkLabel}`}
             className={cn(
-              'inline-flex size-9 shrink-0 items-center justify-center rounded-xl border bg-white/70 transition-colors hover:bg-white',
+              'inline-flex size-8 shrink-0 items-center justify-center rounded-lg border bg-white/70 transition-colors hover:bg-white',
               tier.accentBorder,
               tier.accent,
             )}
@@ -344,53 +354,17 @@ function PackageCardPopover({
             rel="noopener noreferrer"
             target="_blank"
           >
-            <Icon className="size-4" />
+            <Icon className="size-3.5" />
           </a>
         </div>
 
-        {description ? (
-          <p
-            className={cn(
-              'relative mt-3 line-clamp-3 text-[0.8rem] leading-snug',
-              tier.text,
-              'opacity-80',
-            )}
-          >
-            {description}
-          </p>
-        ) : null}
-
-        <div className={cn('relative mt-3 border-t pt-3', tier.accentBorder)}>
-          <div
-            className={cn(
-              'font-display text-[0.55rem] uppercase leading-none tracking-[0.32em]',
-              tier.accent,
-            )}
-          >
-            Owner
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <PackageIcon className={cn('size-3.5', tier.accent)} />
-            {author ? (
-              author.url ? (
-                <a
-                  className={cn('truncate text-[0.82rem] font-medium hover:underline', tier.text)}
-                  href={author.url}
-                  onClick={(e) => e.stopPropagation()}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {author.name}
-                </a>
-              ) : (
-                <span className={cn('truncate text-[0.82rem] font-medium', tier.text)}>
-                  {author.name}
-                </span>
-              )
-            ) : (
-              <span className={cn('text-[0.82rem]', tier.text, 'opacity-50')}>Unknown</span>
-            )}
-          </div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="font-display text-[0.55rem] uppercase leading-none tracking-[0.2em] opacity-40">
+            unpacked
+          </span>
+          <span className="font-display text-[1.05rem] leading-none tracking-[0.08em] tabular-nums">
+            {formatSize(unpackedSize)}
+          </span>
         </div>
       </div>
     </div>
