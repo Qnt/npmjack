@@ -10,6 +10,7 @@ interface PackageCardProps {
   open?: boolean
   onToggle?: () => void
   onClose?: () => void
+  direction?: 'up' | 'down'
 }
 
 type Tier = {
@@ -101,7 +102,7 @@ function NpmMark({ className }: { className?: string }) {
   )
 }
 
-export function PackageCard({ packageInfo, open = false, onToggle, onClose }: PackageCardProps) {
+export function PackageCard({ packageInfo, open = false, onToggle, onClose, direction = 'up' }: PackageCardProps) {
   const tier = pickTier(packageInfo.unpackedSize)
   const label = packageInfo.name.replace(/^@/, '').replace(/\//g, ' · ')
   const hasRepo = Boolean(packageInfo.repositoryUrl)
@@ -181,8 +182,8 @@ export function PackageCard({ packageInfo, open = false, onToggle, onClose }: Pa
             tier.body,
             tier.shadow,
             interactive && 'cursor-pointer',
-            !open && interactive && 'hover:-translate-y-1',
-            open && '-translate-y-10',
+            !open && interactive && (direction === 'down' ? 'hover:translate-y-1' : 'hover:-translate-y-1'),
+            open && (direction === 'down' ? 'translate-y-10' : '-translate-y-10'),
           )}
           onClick={interactive ? onToggle : undefined}
           onKeyDown={

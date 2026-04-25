@@ -40,7 +40,7 @@ export function PlayBoard({
   return (
     <div className="relative flex flex-1 flex-col justify-between">
       <div className="pr-[11rem]">
-        <HandLane drawing={dealerDrawing} packages={dealerPackages} />
+        <HandLane direction="down" drawing={dealerDrawing} packages={dealerPackages} />
       </div>
 
       {(status === 'playing' || status === 'dealerTurn') && (
@@ -165,6 +165,7 @@ function DeckStack({ active }: { active: boolean }) {
 interface HandLaneProps {
   drawing: boolean
   packages: PackageInfo[]
+  direction?: 'up' | 'down'
 }
 
 const CARD_W_REM = 9.5
@@ -181,7 +182,7 @@ function peekRem(count: number, containerRem: number): number {
   return MIN_PEEK_REM
 }
 
-function HandLane({ drawing, packages }: HandLaneProps) {
+function HandLane({ drawing, packages, direction = 'up' }: HandLaneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerPx, setContainerPx] = useState(640)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -219,6 +220,7 @@ function HandLane({ drawing, packages }: HandLaneProps) {
               style={{ left: `${startLeftRem + index * peek}rem`, zIndex: isOpen ? 60 : index + 1 }}
             >
               <PackageCard
+                direction={direction}
                 onClose={() => setOpenIndex(null)}
                 onToggle={() => setOpenIndex(isOpen ? null : index)}
                 open={isOpen}
