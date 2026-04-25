@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   canStartPlayerDraw,
@@ -9,6 +10,7 @@ import {
   resolveRoundOutcome,
   selectNextPackage,
   transitionToDealerTurn,
+  useGame,
 } from './useGame'
 
 import type { GameState } from './useGame'
@@ -26,6 +28,11 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     ...overrides,
   }
 }
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
 
 describe('useGame helpers', () => {
   it('keeps dealer target unchanged when transitioning to dealer turn', () => {
@@ -100,5 +107,66 @@ describe('useGame helpers', () => {
     const dealerTotalBytes = Math.round(1.9 * 1024 * 1024)
 
     expect(resolveRoundOutcome(targetMB, playerTotalBytes, dealerTotalBytes)).toBe('lost')
+  })
+})
+
+describe('useGame hook lifecycle', () => {
+  it('replaces player draw with a new draw id after rejectPlayerPackage', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const { result } = renderHook(() => useGame({ dealerTargetMB: 1.3, targetMB: 1.8 }))
+
+    act(() => {
+      result.current.setPackagePool(['react', 'vue'])
+      result.current.drawPlayerPackage()
+    })
+
+    const initialDraw = result.current.playerDraw
+
+    expect(initialDraw).toBeTruthy()
+    expect(initialDraw?.packageName).toBe('react')
+
+    act(() => {
+      result.current.rejectPlayerPackage('react')
+    })
+
+    expect(result.current.playerDraw).toBeTruthy()
+    expect(result.current.playerDraw?.packageName).toBe('vue')
+    expect(result.current.playerDraw?.drawId).toBeGreaterThan(initialDraw!.drawId)
+    expect(randomSpy).toHaveBeenCalled()
+  })
+
+  it('continues dealer loop after skipDealerPackage clears pending package', () => {
+    vi.useFakeTimers()
+    const randomSpy = vi
+      .spyOn(Math, 'random')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+
+    const { result } = renderHook(() => useGame({ dealerTargetMB: 1.2, targetMB: 2 }))
+
+    act(() => {
+      result.current.setPackagePool(['react', 'vue'])
+      result.current.stand()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(220)
+    })
+
+    expect(result.current.dealerPackageName).toBe('react')
+
+    act(() => {
+      result.current.skipDealerPackage('react')
+    })
+
+    expect(result.current.dealerPackageName).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(220)
+    })
+
+    expect(result.current.dealerPackageName).toBe('vue')
+    expect(randomSpy).toHaveBeenCalled()
   })
 })

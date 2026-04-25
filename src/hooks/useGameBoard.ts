@@ -24,49 +24,76 @@ export function useGameBoard(initialRound?: Parameters<typeof useGame>[0]) {
     game.setPackagePool(packagePoolQuery.data)
   }, [game, packagePoolQuery.data])
 
+  const markPlayerDrawProcessed = (drawId: number) => {
+    processedDrawIdRef.current = drawId
+  }
+
+  const isPlayerDrawProcessed = (drawId: number) => processedDrawIdRef.current === drawId
+
+  const handlePlayerDrawError = () => {
+    if (!game.playerDraw || !isPlayerPackageError) return false
+    if (isPlayerDrawProcessed(game.playerDraw.drawId)) return true
+
+    markPlayerDrawProcessed(game.playerDraw.drawId)
+    game.skipPlayerPackage(game.playerDraw.packageName)
+    return true
+  }
+
+  const handlePlayerDrawLoaded = () => {
+    if (!playerPackageInfo || isLoadingPlayer || !game.playerDraw) return false
+    if (isPlayerDrawProcessed(game.playerDraw.drawId)) return true
+
+    if (playerPackageInfo.name !== game.playerDraw.packageName) {
+      return true
+    }
+
+    if (playerPackageInfo.unpackedSize === null) {
+      markPlayerDrawProcessed(game.playerDraw.drawId)
+      game.rejectPlayerPackage(game.playerDraw.packageName)
+      return true
+    }
+
+    markPlayerDrawProcessed(game.playerDraw.drawId)
+    game.playerHit(playerPackageInfo)
+    game.clearPlayerDraw()
+    return true
+  }
+
+  const handleDealerDrawError = () => {
+    if (!game.dealerPackageName || !isDealerPackageError) return false
+    game.skipDealerPackage(game.dealerPackageName)
+    return true
+  }
+
+  const handleDealerDrawLoaded = () => {
+    if (!dealerPackageInfo || isLoadingDealer || !game.dealerPackageName) return false
+
+    if (dealerPackageInfo.unpackedSize === null) {
+      game.rejectDealerPackage(game.dealerPackageName)
+      return true
+    }
+
+    const isNewPackage =
+      !game.dealerPackages.some((pkg) => pkg.name === dealerPackageInfo.name) &&
+      !game.playerPackages.some((pkg) => pkg.name === dealerPackageInfo.name)
+
+    if (isNewPackage) {
+      game.handleDealerPackageLoaded(dealerPackageInfo)
+      return true
+    }
+
+    game.skipDealerPackage(game.dealerPackageName)
+    return true
+  }
+
   useEffect(() => {
-    if (game.playerDraw && isPlayerPackageError) {
-      if (processedDrawIdRef.current === game.playerDraw.drawId) return
-      processedDrawIdRef.current = game.playerDraw.drawId
-      game.skipPlayerPackage(game.playerDraw.packageName)
-      return
-    }
-
-    if (playerPackageInfo && !isLoadingPlayer && game.playerDraw) {
-      if (processedDrawIdRef.current === game.playerDraw.drawId) return
-
-      if (playerPackageInfo.unpackedSize === null) {
-        processedDrawIdRef.current = game.playerDraw.drawId
-        game.rejectPlayerPackage(game.playerDraw.packageName)
-        return
-      }
-
-      processedDrawIdRef.current = game.playerDraw.drawId
-      game.playerHit(playerPackageInfo)
-      game.clearPlayerDraw()
-    }
+    if (handlePlayerDrawError()) return
+    handlePlayerDrawLoaded()
   }, [game, isLoadingPlayer, isPlayerPackageError, playerPackageInfo])
 
   useEffect(() => {
-    if (game.dealerPackageName && isDealerPackageError) {
-      game.skipDealerPackage(game.dealerPackageName)
-      return
-    }
-
-    if (dealerPackageInfo && !isLoadingDealer && game.dealerPackageName) {
-      if (dealerPackageInfo.unpackedSize === null) {
-        game.rejectDealerPackage(game.dealerPackageName)
-        return
-      }
-
-      const isNewPackage =
-        !game.dealerPackages.some((pkg) => pkg.name === dealerPackageInfo.name) &&
-        !game.playerPackages.some((pkg) => pkg.name === dealerPackageInfo.name)
-
-      if (isNewPackage) {
-        game.handleDealerPackageLoaded(dealerPackageInfo)
-      }
-    }
+    if (handleDealerDrawError()) return
+    handleDealerDrawLoaded()
   }, [dealerPackageInfo, game, isDealerPackageError, isLoadingDealer])
 
   const handleStartGame = () => {

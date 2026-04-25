@@ -1,5 +1,3 @@
-import { cn } from '#/lib/utils'
-
 import type { GameStatus as GameStatusType } from '#/hooks/useGame'
 
 interface GameStatusProps {
@@ -15,9 +13,7 @@ export function GameStatus({ status, playerTotalMB, dealerTotalMB, targetMB }: G
 
   return (
     <div
-      className={cn(
-        'animate-in fade-in zoom-in-95 duration-300 relative inline-flex flex-col items-center justify-center rounded-[18px] border-[3px] border-black/85 px-8 py-4 text-white shadow-[0_2px_0_rgba(0,0,0,0.5),0_6px_14px_rgba(0,0,0,0.46)]',
-      )}
+      className="relative inline-flex flex-col items-center justify-center rounded-[18px] border-[3px] border-black/85 px-8 py-4 text-white shadow-[0_2px_0_rgba(0,0,0,0.5),0_6px_14px_rgba(0,0,0,0.46)]"
       style={{ background: content.gradient }}
     >
       <div className="absolute inset-2 rounded-[13px] border-2 border-white/70" />

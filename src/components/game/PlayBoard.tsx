@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-
 import { GameControls } from '#/components/game/GameControls'
 import { GameStatus } from '#/components/game/GameStatus'
 import { PackageCard, PackageCardBack } from '#/components/game/PackageCard'
@@ -37,48 +35,50 @@ export function PlayBoard({
   status,
   targetMB,
 }: PlayBoardProps) {
+  const controlsLoading = dealerDrawing || isLoadingDeck || isLoadingPlayer
+
   return (
-    <div className="relative flex flex-1 flex-col justify-between">
-      <div className="pr-[11rem]">
-        <HandLane direction="down" drawing={dealerDrawing} packages={dealerPackages} />
-      </div>
+    <div className="flex flex-1 flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_11rem] xl:grid-rows-[1fr_auto_1fr]">
+      <section className="flex min-h-[13.5rem] flex-col justify-center xl:row-start-1">
+        <HandLane drawing={dealerDrawing} label="Dealer" packages={dealerPackages} />
+      </section>
 
-      {(status === 'playing' || status === 'dealerTurn') && (
-        <CenterBar
-          dealerTotalMB={dealerTotalMB}
-          playerTotalMB={playerTotalMB}
-          status={status}
-          targetMB={targetMB}
-        />
-      )}
-
-      <div className="pr-[11rem]">
-        <HandLane drawing={isLoadingPlayer} packages={playerPackages} />
-      </div>
-
-      <div className="pointer-events-none absolute right-2 top-1/2 z-20 -translate-y-1/2">
-        <DeckStack active={dealerDrawing || isLoadingDeck || isLoadingPlayer} />
-      </div>
-
-      <div className="absolute bottom-2 right-2 z-20">
-        <GameControls
-          isLoading={isLoadingDeck || isLoadingPlayer}
-          onHit={onHit}
-          onNewGame={onNewGame}
-          onStand={onStand}
-          playerCardCount={playerPackages.length}
-          status={status}
-        />
-      </div>
-
-      <div className="absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 justify-center">
+      <section className="flex flex-col items-center gap-4 xl:row-start-2">
+        {(status === 'playing' || status === 'dealerTurn') && (
+          <CenterBar
+            dealerTotalMB={dealerTotalMB}
+            playerTotalMB={playerTotalMB}
+            status={status}
+            targetMB={targetMB}
+          />
+        )}
         <GameStatus
           dealerTotalMB={dealerTotalMB}
           playerTotalMB={playerTotalMB}
           status={status}
           targetMB={targetMB}
         />
-      </div>
+      </section>
+
+      <section className="flex min-h-[13.5rem] flex-col justify-center xl:row-start-3">
+        <HandLane drawing={isLoadingPlayer} label="Player" packages={playerPackages} />
+      </section>
+
+      <aside className="order-last flex items-end justify-between gap-4 pt-2 xl:order-none xl:col-start-2 xl:row-span-3 xl:flex-col xl:items-stretch xl:justify-center xl:pt-0">
+        <div className="pointer-events-none flex justify-center xl:justify-end">
+          <DeckStack active={controlsLoading} />
+        </div>
+        <div className="flex justify-end">
+          <GameControls
+            isLoading={isLoadingDeck || isLoadingPlayer}
+            onHit={onHit}
+            onNewGame={onNewGame}
+            onStand={onStand}
+            playerCardCount={playerPackages.length}
+            status={status}
+          />
+        </div>
+      </aside>
     </div>
   )
 }
@@ -108,7 +108,7 @@ function CenterBar({
             <span
               key={`d-${status}`}
               className={cn(
-                'animate-in fade-in-0 slide-in-from-top-1 duration-500 font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
+                'font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
                 dealerBust ? 'text-rose-300' : 'text-orange-200/90',
               )}
             >
@@ -127,7 +127,7 @@ function CenterBar({
           {showPlayer && (
             <span
               className={cn(
-                'animate-in fade-in-0 slide-in-from-bottom-1 duration-500 font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
+                'font-display text-[0.95rem] leading-none tabular-nums tracking-[0.04em]',
                 playerBust ? 'text-rose-300' : 'text-sky-200/90',
               )}
             >
@@ -164,82 +164,30 @@ function DeckStack({ active }: { active: boolean }) {
 
 interface HandLaneProps {
   drawing: boolean
+  label: string
   packages: PackageInfo[]
-  direction?: 'up' | 'down'
 }
 
-const CARD_W_REM = 9.5
-const MIN_PEEK_REM = 2.5
-const MAX_PEEK_REM = CARD_W_REM
-
-function peekRem(count: number, containerRem: number): number {
-  if (count <= 1) return MAX_PEEK_REM
-  const needed = CARD_W_REM + (count - 1) * MIN_PEEK_REM
-  if (needed <= containerRem) {
-    const natural = (containerRem - CARD_W_REM) / (count - 1)
-    return Math.min(natural, MAX_PEEK_REM)
-  }
-  return MIN_PEEK_REM
-}
-
-function HandLane({ drawing, packages, direction = 'up' }: HandLaneProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [containerPx, setContainerPx] = useState(640)
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const ro = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? el.clientWidth
-      setContainerPx(width)
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (openIndex !== null && openIndex >= packages.length) setOpenIndex(null)
-  }, [packages.length, openIndex])
-
-  const containerRem = containerPx / 16
-  const count = packages.length + (drawing ? 1 : 0)
-  const peek = peekRem(count === 0 ? 1 : count, containerRem)
-  const laneWidthRem = CARD_W_REM + Math.max(0, count - 1) * peek
-  const startLeftRem = (containerRem - laneWidthRem) / 2
-
+function HandLane({ drawing, label, packages }: HandLaneProps) {
   return (
-    <div ref={containerRef} className="flex flex-col gap-2">
-      <div className="relative h-[13.5rem]">
-        {packages.map((pkg, index) => {
-          const isOpen = openIndex === index
-          return (
-            <div
-              key={`${pkg.name}-${index}`}
-              className="absolute top-0 transition-all duration-300"
-              style={{ left: `${startLeftRem + index * peek}rem`, zIndex: isOpen ? 60 : index + 1 }}
-            >
-              <PackageCard
-                direction={direction}
-                onClose={() => setOpenIndex(null)}
-                onToggle={() => setOpenIndex(isOpen ? null : index)}
-                open={isOpen}
-                packageInfo={pkg}
-              />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between px-2">
+        <span className="font-display text-[0.72rem] uppercase tracking-[0.18em] text-white/45">
+          {label}
+        </span>
+        <span className="text-xs uppercase tracking-[0.16em] text-white/25">
+          {packages.length} shown
+        </span>
+      </div>
+      <div className="overflow-x-auto pb-2">
+        <div className="flex min-h-[13.5rem] w-max min-w-full items-start justify-center px-3 [&>*+*]:-ml-10 sm:[&>*+*]:-ml-12 lg:[&>*+*]:-ml-16">
+          {packages.map((pkg, index) => (
+            <div key={`${pkg.name}-${index}`} className="transition-transform duration-200">
+              <PackageCard packageInfo={pkg} />
             </div>
-          )
-        })}
-        {drawing && (
-          <div
-            className="absolute top-0 transition-all duration-300"
-            style={{
-              left: `${startLeftRem + packages.length * peek}rem`,
-              zIndex: packages.length + 1,
-            }}
-          >
-            <PackageCardBack label="drawing" note="…" loading />
-          </div>
-        )}
+          ))}
+          {drawing ? <PackageCardBack label="drawing" note="…" loading /> : null}
+        </div>
       </div>
     </div>
   )
