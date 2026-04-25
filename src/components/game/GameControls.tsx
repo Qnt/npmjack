@@ -1,4 +1,4 @@
-import { RefreshCw, Shield } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 import { cn } from '#/lib/utils'
 
@@ -77,7 +77,7 @@ export function GameControls({
 
   if (status === 'playing') {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex w-[9rem] flex-col gap-2">
         {playerCardCount > 0 && (
           <PressButton
             onClick={onStand}
@@ -85,7 +85,6 @@ export function GameControls({
             shadowColor="#7a2a07"
             className="bg-gradient-to-b from-orange-400 to-orange-600 px-4 py-2 text-[0.72rem] sm:text-[0.82rem] text-orange-950"
           >
-            <Shield className="size-3.5" />
             Stand
           </PressButton>
         )}
