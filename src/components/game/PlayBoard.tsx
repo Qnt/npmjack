@@ -69,7 +69,7 @@ export function PlayBoard({
         />
       </div>
 
-      <div className="absolute inset-x-0 top-1/2 z-10 -translate-y-1/2">
+      <div className="absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 justify-center">
         <GameStatus
           dealerTotalMB={dealerTotalMB}
           playerTotalMB={playerTotalMB}

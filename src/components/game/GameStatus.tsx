@@ -1,5 +1,3 @@
-import { Skull, Trophy } from 'lucide-react'
-
 import { cn } from '#/lib/utils'
 
 import type { GameStatus as GameStatusType } from '#/hooks/useGame'
@@ -15,24 +13,16 @@ export function GameStatus({ status, playerTotalMB, dealerTotalMB, targetMB }: G
   const content = getStatusContent(status, playerTotalMB, dealerTotalMB, targetMB)
   if (!content) return null
 
-  const Icon = content.icon
-
   return (
     <div
       className={cn(
-        'relative flex items-center gap-3 rounded-[18px] border-[3px] bg-gradient-to-b p-3 font-display uppercase shadow-[0_6px_0_rgba(0,0,0,0.5)]',
-        content.className,
+        'animate-in fade-in zoom-in-95 duration-300 inline-flex flex-col items-center gap-0.5 rounded-full border border-white/10 bg-black/40 px-7 py-2.5 font-display uppercase backdrop-blur-md',
+        content.textClass,
       )}
     >
-      <span className="flex size-10 items-center justify-center rounded-xl border-2 border-black/70 bg-black/30">
-        <Icon className="size-5" />
-      </span>
-      <div className="flex-1">
-        <div className="text-[0.72rem] tracking-[0.3em] opacity-80">round resolution</div>
-        <div className="mt-1 text-xl leading-none">{content.title}</div>
-        <div className="mt-1 text-[0.72rem] tracking-[0.15em] opacity-80 normal-case">
-          {content.description}
-        </div>
+      <div className="text-[1.05rem] leading-none tracking-[0.25em]">{content.title}</div>
+      <div className="text-[0.68rem] leading-none tracking-[0.15em] opacity-60 normal-case">
+        {content.description}
       </div>
     </div>
   )
@@ -46,34 +36,30 @@ function getStatusContent(
 ) {
   if (status === 'bust') {
     return {
-      className: 'from-rose-500 to-rose-700 border-rose-950/80 text-rose-50',
-      description: `over the limit by ${(playerTotalMB - targetMB).toFixed(3)} mb`,
-      icon: Skull,
-      title: 'Player Bust',
+      description: `+${(playerTotalMB - targetMB).toFixed(2)} MB`,
+      textClass: 'text-rose-300',
+      title: 'Bust',
     }
   }
   if (status === 'dealerBust') {
     return {
-      className: 'from-emerald-400 to-emerald-600 border-emerald-950/80 text-emerald-950',
-      description: `dealer overshot by ${(dealerTotalMB - targetMB).toFixed(3)} mb`,
-      icon: Trophy,
+      description: `dealer +${(dealerTotalMB - targetMB).toFixed(2)} MB`,
+      textClass: 'text-emerald-300',
       title: 'House Bust',
     }
   }
   if (status === 'won') {
     return {
-      className: 'from-amber-300 to-amber-500 border-amber-950/80 text-amber-950',
-      description: `${playerTotalMB.toFixed(3)} mb vs dealer ${dealerTotalMB.toFixed(3)} mb`,
-      icon: Trophy,
-      title: 'Round Won',
+      description: `${playerTotalMB.toFixed(2)} MB vs ${dealerTotalMB.toFixed(2)} MB`,
+      textClass: 'text-amber-300',
+      title: 'Won',
     }
   }
   if (status === 'lost') {
     return {
-      className: 'from-orange-500 to-orange-700 border-orange-950/80 text-orange-50',
-      description: `${playerTotalMB.toFixed(3)} mb vs dealer ${dealerTotalMB.toFixed(3)} mb`,
-      icon: Skull,
-      title: 'Dealer Edge',
+      description: `${playerTotalMB.toFixed(2)} MB vs ${dealerTotalMB.toFixed(2)} MB`,
+      textClass: 'text-orange-300',
+      title: 'Lost',
     }
   }
   return null
