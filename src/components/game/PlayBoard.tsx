@@ -43,12 +43,14 @@ export function PlayBoard({
         <HandLane drawing={dealerDrawing} packages={dealerPackages} />
       </div>
 
-      <CenterBar
-        dealerTotalMB={dealerTotalMB}
-        playerTotalMB={playerTotalMB}
-        status={status}
-        targetMB={targetMB}
-      />
+      {status === 'playing' && (
+        <CenterBar
+          dealerTotalMB={dealerTotalMB}
+          playerTotalMB={playerTotalMB}
+          status={status}
+          targetMB={targetMB}
+        />
+      )}
 
       <div className="pr-[11rem]">
         <HandLane drawing={isLoadingPlayer} packages={playerPackages} />
